@@ -48,12 +48,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ['expo-notifications', { icon: './assets/notification-icon.png', color: '#6c63ff' }],
     'expo-secure-store',
     'expo-document-picker',
-    '@sentry/react-native/expo',
   ],
+  owner: 'gary5876',
   extra: {
-    // Injected from EAS Secrets or env vars at build time
     backendUrl: process.env.BACKEND_URL || 'http://localhost:8000',
-    sentryDsn: process.env.SENTRY_DSN || '',
     environment: process.env.APP_ENVIRONMENT || 'development',
+    eas: {
+      projectId: '165d5a36-a5e2-4d7b-aef9-4de9374d73aa',
+    },
   },
 });

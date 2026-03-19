@@ -10,7 +10,11 @@
     },
     "preview": {
       "distribution": "internal",
-      "android": { "buildType": "apk" }
+      "android": { "buildType": "apk" },
+      "env": {
+        "BACKEND_URL": "https://study-helper-backend-production.up.railway.app",
+        "APP_ENVIRONMENT": "production"
+      }
     },
     "production": {
       "autoIncrement": true,
