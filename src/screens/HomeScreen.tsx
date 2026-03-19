@@ -5,7 +5,7 @@ import {
 import { Text, FAB, Card, Chip, IconButton, Divider } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import * as Sentry from '@sentry/react-native';
+
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getAllSessions, getPendingReviewCount, SessionRow } from '../services/storage';
 
@@ -22,7 +22,7 @@ export default function HomeScreen({ navigation }: Props) {
       setSessions(s);
       setDueReviews(d);
     } catch (err: any) {
-      Sentry.captureException(err);
+      
       Alert.alert('Error', 'Failed to load sessions. Please restart the app.');
     }
   }, []);

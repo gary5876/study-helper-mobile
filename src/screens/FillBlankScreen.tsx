@@ -3,7 +3,7 @@ import {
   View, StyleSheet, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { Text, Button, Card } from 'react-native-paper';
-import * as Sentry from '@sentry/react-native';
+
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent, createAttempt, saveAnswer, completeAttempt } from '../services/storage';
@@ -46,7 +46,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
         const aId = await createAttempt({ session_id: sessionId, attempt_type: 'fill' });
         setAttemptId(aId);
       } catch (err: any) {
-        Sentry.captureException(err);
+        
         Alert.alert('Error', 'Failed to load questions. Please go back and try again.');
       } finally {
         setLoading(false);
@@ -77,7 +77,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
       });
       recordAnswer({ questionId: current.id, userAnswer: userInput.trim(), isCorrect, timeSpentMs: 0 });
     } catch (err: any) {
-      Sentry.captureException(err);
+      
       // Non-fatal: continue quiz even if DB write fails
     }
     setAnswers((prev) => [...prev, { correct: isCorrect }]);
@@ -105,7 +105,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
         const pct = total > 0 ? (correct / total) * 100 : 0;
         await completeAttempt(attemptId, pct);
       } catch (err: any) {
-        Sentry.captureException(err);
+        
       } finally {
         navigation.replace('Score', { attemptId, sessionId });
       }

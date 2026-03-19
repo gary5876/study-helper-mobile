@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { Text } from 'react-native-paper';
-import * as Sentry from '@sentry/react-native';
+
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent, createAttempt, saveAnswer, completeAttempt } from '../services/storage';
@@ -35,7 +35,7 @@ export default function MCQScreen({ route, navigation }: Props) {
         setAttemptId(aId);
         startQuiz('mcq', qs, aId);
       } catch (err: any) {
-        Sentry.captureException(err);
+        
         Alert.alert('Error', 'Failed to load questions. Please go back and try again.');
       } finally {
         setLoading(false);
@@ -56,7 +56,7 @@ export default function MCQScreen({ route, navigation }: Props) {
       recordAnswer({ questionId, userAnswer: choice, isCorrect, timeSpentMs: 0 });
       setLocalAnswers((prev) => [...prev, { questionId, correct: isCorrect, userAnswer: choice }]);
     } catch (err: any) {
-      Sentry.captureException(err);
+      
       // Non-fatal: answer wasn't saved to DB, but allow quiz to continue
     }
   }
@@ -71,7 +71,7 @@ export default function MCQScreen({ route, navigation }: Props) {
         finishQuiz();
         navigation.replace('FillBlank', { sessionId });
       } catch (err: any) {
-        Sentry.captureException(err);
+        
         navigation.replace('FillBlank', { sessionId });
       }
     } else {
