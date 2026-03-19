@@ -4,18 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useColorScheme } from 'react-native';
-import * as Sentry from '@sentry/react-native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { initDatabase } from './src/db/schema';
-import { ENV } from './src/config/env';
-
-Sentry.init({
-  dsn: ENV.SENTRY_DSN,
-  environment: ENV.ENVIRONMENT,
-  enabled: ENV.ENVIRONMENT !== 'development',
-  tracesSampleRate: 0.2,
-  enableAutoSessionTracking: true,
-});
 
 const lightTheme = {
   ...MD3LightTheme,
@@ -46,7 +36,6 @@ function App() {
   useEffect(() => {
     initDatabase().catch((err) => {
       console.error('DB init failed:', err);
-      Sentry.captureException(err);
     });
   }, []);
 
@@ -62,4 +51,4 @@ function App() {
   );
 }
 
-export default Sentry.wrap(App);
+export default App;

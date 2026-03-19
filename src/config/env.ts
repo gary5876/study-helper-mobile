@@ -12,7 +12,6 @@ import Constants from 'expo-constants';
 
 interface AppConfig {
   BACKEND_URL: string;
-  SENTRY_DSN: string;
   ENVIRONMENT: 'development' | 'staging' | 'production';
 }
 
@@ -24,11 +23,6 @@ function getConfig(): AppConfig {
       extra.backendUrl ||
       process.env.EXPO_PUBLIC_BACKEND_URL ||
       'http://localhost:8000',
-
-    SENTRY_DSN:
-      extra.sentryDsn ||
-      process.env.EXPO_PUBLIC_SENTRY_DSN ||
-      '',
 
     ENVIRONMENT: (__DEV__
       ? 'development'
