@@ -1,0 +1,43 @@
+# E2E Test: MCQ Quiz Flow
+# Verifies that the user can complete an MCQ quiz session.
+#
+# Pre-condition: A completed session exists (run 02_upload_flow first).
+#
+# Run: maestro test .maestro/03_mcq_quiz_flow.yaml
+appId: com.fundamentals.app.dev
+---
+- launchApp
+
+# Home screen — tap on an existing session
+- assertVisible: "Fundamentals"
+- tapOn:
+    id: "session-card"
+    index: 0
+
+# Study Notes screen — navigate to quiz
+- assertVisible: "Study Notes"
+- tapOn: "Start MCQ Quiz"
+
+# Quiz screen
+- assertVisible: "Multiple Choice"
+
+# Answer all questions by always picking option A
+- repeat:
+    times: 20  # generous upper bound
+    commands:
+      - runFlow:
+          when:
+            visible: "A)"
+          file: ".maestro/subflows/pick_option_a.yaml"
+      - runFlow:
+          when:
+            visible: "Next"
+          file: ".maestro/subflows/tap_next.yaml"
+      - runFlow:
+          when:
+            visible: "Fill in the Blank"
+          commands:
+            - stopRepeat
+
+# Should arrive at Fill in the Blank after MCQ completes
+- assertVisible: "Fill in the Blank"

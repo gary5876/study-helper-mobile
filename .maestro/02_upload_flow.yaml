@@ -1,0 +1,34 @@
+# E2E Test: PDF Upload Flow
+# Verifies the upload → generation → study notes navigation.
+#
+# Pre-condition: API key already saved (run 01_api_key_setup first, or set state).
+# Note: This test requires a running backend at the configured BACKEND_URL
+#       and a real Anthropic API key injected via EAS Secrets / env var.
+#
+# Run: maestro test .maestro/02_upload_flow.yaml
+appId: com.fundamentals.app.dev
+---
+- launchApp
+
+# Navigate to Upload screen
+- assertVisible: "Fundamentals"
+- tapOn: "New Session"
+- assertVisible: "Upload a PDF"
+
+# Tap Choose PDF — file picker is opened (Maestro can't control system picker,
+# so use a seed file placed in the simulator's document folder beforehand)
+- tapOn: "Choose PDF"
+
+# After picker, verify progress states are shown
+- assertVisible:
+    text: "Uploading PDF"
+    optional: true  # may flash briefly
+
+# Wait for generation to complete (up to 5 min for real API calls)
+- extendedWaitUntil:
+    visible: "Ready!"
+    timeout: 300000
+
+# Should navigate to Study Notes automatically
+- assertVisible: "Study Notes"
+- assertVisible: "Key Concepts"

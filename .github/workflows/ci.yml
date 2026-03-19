@@ -1,0 +1,113 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ──────────────────────────────────────
+  # 1. Lint + Type-check + Test
+  # ──────────────────────────────────────
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: fundamentals-mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: fundamentals-mobile
+        run: npm ci
+
+      - name: Lint
+        working-directory: fundamentals-mobile
+        run: npm run lint
+
+      - name: Type-check
+        working-directory: fundamentals-mobile
+        run: npx tsc --noEmit
+
+      - name: Run tests with coverage
+        working-directory: fundamentals-mobile
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          working-directory: fundamentals-mobile
+          fail_ci_if_error: false
+
+  # ──────────────────────────────────────
+  # 2. EAS Build — Android Preview
+  # ──────────────────────────────────────
+  build-android:
+    name: Build Android (Preview)
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: fundamentals-mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: fundamentals-mobile
+        run: npm ci
+
+      - name: Set up EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android preview APK
+        working-directory: fundamentals-mobile
+        run: eas build --platform android --profile preview --non-interactive
+
+  # ──────────────────────────────────────
+  # 3. EAS Build — iOS Preview
+  # ──────────────────────────────────────
+  build-ios:
+    name: Build iOS (Preview)
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: fundamentals-mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: fundamentals-mobile
+        run: npm ci
+
+      - name: Set up EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS preview IPA
+        working-directory: fundamentals-mobile
+        run: eas build --platform ios --profile preview --non-interactive

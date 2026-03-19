@@ -1,0 +1,236 @@
+/**
+ * HTTP client for the Fundamentals backend.
+ * Base URL is read from environment or defaults to localhost for dev.
+ * Includes automatic retry with exponential back-off via axios-retry.
+ */
+import axios, { AxiosError } from 'axios';
+import axiosRetry from 'axios-retry';
+import * as SecureStore from 'expo-secure-store';
+import { ENV } from '../config/env';
+
+export const API_KEY_STORAGE_KEY = 'anthropic_api_key';
+export const BASE_URL_STORAGE_KEY = 'backend_base_url';
+const DEFAULT_BASE_URL = ENV.BACKEND_URL;
+
+// ─────────────────────────────────────────
+// Types (mirror backend schemas)
+// ─────────────────────────────────────────
+
+export interface UploadResponse {
+  session_id: string;
+  pdf_name: string;
+  page_count: number;
+  word_count: number;
+  status: string;
+}
+
+export interface StatusResponse {
+  session_id: string;
+  status: 'processing' | 'complete' | 'failed';
+  progress_pct: number;
+  error_message?: string;
+}
+
+export interface StudyContent {
+  session_id: string;
+  notes: StudyNotes;
+  mcq_questions: MCQQuestion[];
+  fill_questions: FillQuestion[];
+  metadata: ContentMetadata;
+}
+
+export interface StudyNotes {
+  key_concepts: KeyConcept[];
+  sections: StudySection[];
+  glossary: GlossaryEntry[];
+}
+
+export interface KeyConcept {
+  id: string;
+  term: string;
+  definition: string;
+  importance: 'high' | 'medium' | 'low';
+}
+
+export interface StudySection {
+  title: string;
+  summary: string;
+  bullets: string[];
+}
+
+export interface GlossaryEntry {
+  term: string;
+  brief_def: string;
+}
+
+export interface MCQQuestion {
+  id: string;
+  question: string;
+  options: { A: string; B: string; C: string; D: string };
+  correct_answer: 'A' | 'B' | 'C' | 'D';
+  explanation: string;
+  concept_id: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+export interface FillQuestion {
+  id: string;
+  sentence_with_blank: string;
+  answer: string;
+  acceptable_variants: string[];
+  hint: string;
+  concept_id: string;
+}
+
+export interface ContentMetadata {
+  page_count: number;
+  word_count: number;
+  generated_at: string;
+  model_used: string;
+  section_count: number;
+}
+
+// ─────────────────────────────────────────
+// API Key helpers
+// ─────────────────────────────────────────
+
+export async function saveApiKey(key: string): Promise<void> {
+  await SecureStore.setItemAsync(API_KEY_STORAGE_KEY, key);
+}
+
+export async function getApiKey(): Promise<string | null> {
+  return SecureStore.getItemAsync(API_KEY_STORAGE_KEY);
+}
+
+export async function hasApiKey(): Promise<boolean> {
+  const key = await getApiKey();
+  return !!key && key.length > 10;
+}
+
+export async function saveBaseUrl(url: string): Promise<void> {
+  await SecureStore.setItemAsync(BASE_URL_STORAGE_KEY, url);
+}
+
+export async function getBaseUrl(): Promise<string> {
+  const stored = await SecureStore.getItemAsync(BASE_URL_STORAGE_KEY);
+  return stored || DEFAULT_BASE_URL;
+}
+
+// ─────────────────────────────────────────
+// Axios instance factory
+// ─────────────────────────────────────────
+
+async function createClient() {
+  const baseURL = await getBaseUrl();
+  const client = axios.create({ baseURL, timeout: 120_000 });
+
+  // Automatic retry with exponential back-off
+  // Retries on network errors and 5xx responses (not 4xx — those are client errors)
+  axiosRetry(client, {
+    retries: 3,
+    retryDelay: axiosRetry.exponentialDelay,   // 1s → 2s → 4s
+    retryCondition: (error: AxiosError) => {
+      // Retry on network failures or server errors, NOT on 4xx
+      const isNetworkError = !error.response;
+      const isServerError = (error.response?.status ?? 0) >= 500;
+      // Never retry rate-limit errors — wait and let the user retry
+      const isRateLimit = error.response?.status === 429;
+      return (isNetworkError || isServerError) && !isRateLimit;
+    },
+    onRetry: (retryCount, error) => {
+      console.warn(`[API] Retry #${retryCount} after error: ${error.message}`);
+    },
+  });
+
+  // Error normaliser interceptor
+  client.interceptors.response.use(
+    (res) => res,
+    (err: AxiosError<{ detail?: string; message?: string }>) => {
+      const detail =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        'Unknown error';
+      return Promise.reject(new Error(detail));
+    }
+  );
+  return client;
+}
+
+// ─────────────────────────────────────────
+// API functions
+// ─────────────────────────────────────────
+
+export async function uploadPDF(
+  fileUri: string,
+  fileName: string,
+  apiKey: string
+): Promise<UploadResponse> {
+  const client = await createClient();
+  const form = new FormData();
+  form.append('file', { uri: fileUri, name: fileName, type: 'application/pdf' } as any);
+
+  const res = await client.post<UploadResponse>('/upload', form, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'X-API-Key': apiKey,
+    },
+  });
+  return res.data;
+}
+
+export async function startGeneration(
+  sessionId: string,
+  apiKey: string
+): Promise<void> {
+  const client = await createClient();
+  await client.post(
+    '/generate',
+    { session_id: sessionId },
+    { headers: { 'X-API-Key': apiKey } }
+  );
+}
+
+export async function pollStatus(sessionId: string): Promise<StatusResponse> {
+  const client = await createClient();
+  const res = await client.get<StatusResponse>(`/status/${sessionId}`);
+  return res.data;
+}
+
+export async function fetchResult(sessionId: string): Promise<StudyContent> {
+  const client = await createClient();
+  const res = await client.get<StudyContent>(`/result/${sessionId}`);
+  return res.data;
+}
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  const client = await createClient();
+  await client.delete(`/session/${sessionId}`);
+}
+
+// ─────────────────────────────────────────
+// Polling helper (used by UploadScreen)
+// ─────────────────────────────────────────
+
+export async function waitForCompletion(
+  sessionId: string,
+  onProgress: (pct: number, stage: string) => void,
+  intervalMs = 3000,
+  timeoutMs = 300_000
+): Promise<StudyContent> {
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    const status = await pollStatus(sessionId);
+    onProgress(status.progress_pct, `Generating… (${status.progress_pct}%)`);
+
+    if (status.status === 'complete') {
+      return fetchResult(sessionId);
+    }
+    if (status.status === 'failed') {
+      throw new Error(status.error_message || 'Generation failed on the server.');
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  throw new Error('Generation timed out. Please try again.');
+}

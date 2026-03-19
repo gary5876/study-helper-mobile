@@ -1,0 +1,26 @@
+# E2E Test: API Key Setup Flow
+# Verifies that a user can enter and save an Anthropic API key.
+#
+# Run: maestro test .maestro/01_api_key_setup.yaml
+appId: com.fundamentals.app.dev
+---
+- launchApp:
+    clearState: true
+
+# Should land on the API Key Setup screen on first launch
+- assertVisible: "Enter your Anthropic API key"
+
+# Type an invalid key (too short) and verify error
+- tapOn: "API Key"
+- inputText: "sk-ant-short"
+- tapOn: "Save Key"
+- assertVisible: "API key must start with sk-ant- and be at least 20 characters"
+
+# Type a valid key and save
+- clearText
+- inputText: "sk-ant-api03-valid-key-for-testing-purposes-1234"
+- tapOn: "Save Key"
+
+# Should navigate to Home screen after saving
+- assertVisible: "Fundamentals"
+- assertVisible: "No sessions yet"
