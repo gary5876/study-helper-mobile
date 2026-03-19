@@ -113,7 +113,8 @@ export async function saveBaseUrl(url: string): Promise<void> {
 
 export async function getBaseUrl(): Promise<string> {
   const stored = await SecureStore.getItemAsync(BASE_URL_STORAGE_KEY);
-  return stored || DEFAULT_BASE_URL;
+  if (stored && stored !== 'http://localhost:8000') return stored;
+  return DEFAULT_BASE_URL;
 }
 
 // ─────────────────────────────────────────
@@ -151,7 +152,10 @@ async function createClient() {
         err.response?.data?.message ||
         err.message ||
         'Unknown error';
-      return Promise.reject(new Error(detail));
+      const attemptedUrl = err.config?.baseURL
+        ? `${err.config.baseURL}${err.config.url ?? ''}`
+        : 'unknown URL';
+      return Promise.reject(new Error(`${detail} (tried: ${attemptedUrl})`));
     }
   );
   return client;

@@ -4,12 +4,13 @@ import { Text, TextInput, Button, Card, HelperText } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { saveApiKey, saveBaseUrl } from '../services/api';
+import { ENV } from '../config/env';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ApiKeySetup'>;
 
 export default function ApiKeySetupScreen({ navigation }: Props) {
   const [apiKey, setApiKey] = useState('');
-  const [baseUrl, setBaseUrl] = useState('http://localhost:8000');
+  const [baseUrl, setBaseUrl] = useState(ENV.BACKEND_URL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -25,7 +26,7 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
     setError('');
     try {
       await saveApiKey(apiKey.trim());
-      await saveBaseUrl(baseUrl.trim() || 'http://localhost:8000');
+      await saveBaseUrl(baseUrl.trim() || ENV.BACKEND_URL);
       navigation.replace('Home');
     } catch (e) {
       setError('Failed to save settings. Please try again.');
@@ -83,7 +84,7 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
                 value={baseUrl}
                 onChangeText={setBaseUrl}
                 mode="outlined"
-                placeholder="http://localhost:8000"
+                placeholder={ENV.BACKEND_URL}
                 style={styles.input}
                 autoCapitalize="none"
                 autoCorrect={false}
