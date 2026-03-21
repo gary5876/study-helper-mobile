@@ -13,7 +13,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: process.env.APP_ENVIRONMENT === 'staging' ? 'Fundamentals (Staging)' : 'Fundamentals',
+  name: process.env.APP_ENVIRONMENT === 'staging' ? 'study-helper (Staging)' : 'study-helper',
   slug: 'fundamentals',
   version: '1.0.0',
   orientation: 'portrait',
@@ -22,7 +22,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   splash: {
     image: './assets/splash.png',
     resizeMode: 'contain',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#14532d',
   },
   assetBundlePatterns: ['**/*'],
   ios: {
@@ -35,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#1a1a2e',
+      backgroundColor: '#14532d',
     },
     package:
       process.env.APP_ENVIRONMENT === 'production'
