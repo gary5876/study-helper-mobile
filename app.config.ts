@@ -49,7 +49,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-document-picker',
   ],
-  owner: 'gary5876',
+  owner: 'fundamentals',
   extra: {
     backendUrl: process.env.BACKEND_URL || 'https://study-helper-backend-production.up.railway.app',
     environment: process.env.APP_ENVIRONMENT || 'development',
