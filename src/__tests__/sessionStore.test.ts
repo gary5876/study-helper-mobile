@@ -31,7 +31,7 @@ describe('sessionStore', () => {
     // Reset store to initial state before each test
     useSessionStore.setState({
       sessionId: null,
-      content: null,
+      studyContent: null,
       quiz: null,
     });
   });
@@ -41,7 +41,7 @@ describe('sessionStore', () => {
     act(() => { useSessionStore.getState().setSession('sess-1', content); });
     const state = useSessionStore.getState();
     expect(state.sessionId).toBe('sess-1');
-    expect(state.content?.session_id).toBe('sess-1');
+    expect(state.studyContent?.session_id).toBe('sess-1');
   });
 
   it('clearSession resets to null', () => {
@@ -50,7 +50,7 @@ describe('sessionStore', () => {
     act(() => { useSessionStore.getState().clearSession(); });
     const state = useSessionStore.getState();
     expect(state.sessionId).toBeNull();
-    expect(state.content).toBeNull();
+    expect(state.studyContent).toBeNull();
   });
 
   it('startQuiz initialises quiz state', () => {
@@ -61,7 +61,7 @@ describe('sessionStore', () => {
     });
     const quiz = useSessionStore.getState().quiz;
     expect(quiz).not.toBeNull();
-    expect(quiz?.type).toBe('mcq');
+    expect(quiz?.quizType).toBe('mcq');
     expect(quiz?.currentIndex).toBe(0);
     expect(quiz?.answers).toHaveLength(0);
   });

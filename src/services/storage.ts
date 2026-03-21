@@ -12,6 +12,8 @@ import {
   ReviewScheduleRow,
 } from '../db/schema';
 
+export type { SessionRow, StudyContentRow, AttemptRow, AnswerRow, ReviewScheduleRow };
+
 function uuid(): string {
   return Crypto.randomUUID();
 }
