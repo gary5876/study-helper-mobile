@@ -22,28 +22,22 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: fundamentals-mobile/package-lock.json
 
       - name: Install dependencies
-        working-directory: fundamentals-mobile
         run: npm ci
 
       - name: Lint
-        working-directory: fundamentals-mobile
         run: npm run lint
 
       - name: Type-check
-        working-directory: fundamentals-mobile
         run: npx tsc --noEmit
 
       - name: Run tests with coverage
-        working-directory: fundamentals-mobile
         run: npm run test:coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          working-directory: fundamentals-mobile
           fail_ci_if_error: false
 
   # ──────────────────────────────────────
@@ -63,10 +57,8 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: fundamentals-mobile/package-lock.json
 
       - name: Install dependencies
-        working-directory: fundamentals-mobile
         run: npm ci
 
       - name: Set up EAS
@@ -76,7 +68,6 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build Android preview APK
-        working-directory: fundamentals-mobile
         run: eas build --platform android --profile preview --non-interactive
 
   # ──────────────────────────────────────
@@ -96,10 +87,8 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: fundamentals-mobile/package-lock.json
 
       - name: Install dependencies
-        working-directory: fundamentals-mobile
         run: npm ci
 
       - name: Set up EAS
@@ -109,5 +98,4 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build iOS preview IPA
-        working-directory: fundamentals-mobile
         run: eas build --platform ios --profile preview --non-interactive
