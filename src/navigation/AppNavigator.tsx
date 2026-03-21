@@ -20,7 +20,7 @@ export type RootStackParamList = {
   Home: undefined;
   Upload: undefined;
   StudyNotes: { sessionId: string };
-  MCQ: { sessionId: string };
+  MCQ: { sessionId: string; retryIds?: string[] };
   FillBlank: { sessionId: string };
   Score: { attemptId: string; sessionId: string };
   WrongAnswer: { attemptId: string; sessionId: string };

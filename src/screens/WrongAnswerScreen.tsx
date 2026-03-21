@@ -3,9 +3,7 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Card, Button, Chip, Divider } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import {
-  getWrongAnswers, createAttempt, saveAnswer, completeAttempt, scheduleReview,
-} from '../services/storage';
+import { getWrongAnswers, scheduleReview } from '../services/storage';
 import { MCQQuestion, FillQuestion } from '../services/api';
 import { useSessionStore } from '../store/sessionStore';
 import {
@@ -90,8 +88,7 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
     setSaving(false);
 
     if (retryIds.length > 0) {
-      useSessionStore.getState().setWrongQuestions(retryIds);
-      navigation.replace('MCQ', { sessionId });
+      navigation.replace('MCQ', { sessionId, retryIds });
     } else {
       navigation.navigate('Home');
     }

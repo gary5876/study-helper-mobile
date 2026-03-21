@@ -13,7 +13,7 @@ import ProgressBar from '../components/ProgressBar';
 type Props = NativeStackScreenProps<RootStackParamList, 'MCQ'>;
 
 export default function MCQScreen({ route, navigation }: Props) {
-  const { sessionId } = route.params;
+  const { sessionId, retryIds } = route.params;
   const [questions, setQuestions] = useState<MCQQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const { startQuiz, recordAnswer, advanceQuestion, finishQuiz, quiz } = useSessionStore();
@@ -28,7 +28,10 @@ export default function MCQScreen({ route, navigation }: Props) {
         const row = await getStudyContent(sessionId);
         if (!row) { setLoading(false); return; }
 
-        const qs: MCQQuestion[] = JSON.parse(row.mcq_json);
+        let qs: MCQQuestion[] = JSON.parse(row.mcq_json);
+        if (retryIds && retryIds.length > 0) {
+          qs = qs.filter((q) => retryIds.includes(q.id));
+        }
         setQuestions(qs);
 
         const aId = await createAttempt({ session_id: sessionId, attempt_type: 'mcq' });

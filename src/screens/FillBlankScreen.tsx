@@ -100,7 +100,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
     const isLast = currentIndex === questions.length - 1;
     if (isLast && attemptId) {
       try {
-        const correct = answers.filter((a) => a.correct).length + (feedback.isCorrect ? 1 : 0);
+        const correct = answers.filter((a) => a.correct).length;
         const total = questions.length;
         const pct = total > 0 ? (correct / total) * 100 : 0;
         await completeAttempt(attemptId, pct);
