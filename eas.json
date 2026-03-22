@@ -11,6 +11,7 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
+      "ios": { "simulator": true },
       "env": {
         "BACKEND_URL": "https://study-helper-backend-production.up.railway.app",
         "APP_ENVIRONMENT": "production"

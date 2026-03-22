@@ -27,6 +27,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: false,
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
     bundleIdentifier:
       process.env.APP_ENVIRONMENT === 'production'
         ? 'com.fundamentals.app'
