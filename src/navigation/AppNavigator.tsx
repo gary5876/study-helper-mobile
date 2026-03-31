@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
-import { hasApiKey } from '../services/api';
+import { hasPlanSelected, getPlan } from '../services/api';
 
 // Screens
+import PlanSelectionScreen from '../screens/PlanSelectionScreen';
 import ApiKeySetupScreen from '../screens/ApiKeySetupScreen';
 import HomeScreen from '../screens/HomeScreen';
 import UploadScreen from '../screens/UploadScreen';
@@ -16,6 +17,7 @@ import WrongAnswerScreen from '../screens/WrongAnswerScreen';
 import ReviewConceptScreen from '../screens/ReviewConceptScreen';
 
 export type RootStackParamList = {
+  PlanSelection: undefined;
   ApiKeySetup: undefined;
   Home: undefined;
   Upload: undefined;
@@ -30,10 +32,25 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const [initialRoute, setInitialRoute] = useState<'ApiKeySetup' | 'Home' | null>(null);
+  const [initialRoute, setInitialRoute] = useState<'PlanSelection' | 'ApiKeySetup' | 'Home' | null>(null);
 
   useEffect(() => {
-    hasApiKey().then((has) => setInitialRoute(has ? 'Home' : 'ApiKeySetup'));
+    (async () => {
+      const planSelected = await hasPlanSelected();
+      if (!planSelected) {
+        setInitialRoute('PlanSelection');
+        return;
+      }
+      const plan = await getPlan();
+      // paid plan: need API key setup if not done yet
+      if (plan === 'paid') {
+        const { hasApiKey } = await import('../services/api');
+        const hasKey = await hasApiKey();
+        setInitialRoute(hasKey ? 'Home' : 'ApiKeySetup');
+      } else {
+        setInitialRoute('Home');
+      }
+    })();
   }, []);
 
   if (initialRoute === null) {
@@ -54,6 +71,11 @@ export default function AppNavigator() {
           headerTitleStyle: { fontWeight: 'bold' },
         }}
       >
+        <Stack.Screen
+          name="PlanSelection"
+          component={PlanSelectionScreen}
+          options={{ title: 'Get Started', headerShown: false }}
+        />
         <Stack.Screen
           name="ApiKeySetup"
           component={ApiKeySetupScreen}

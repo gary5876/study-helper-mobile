@@ -10,6 +10,9 @@ import { ENV } from '../config/env';
 
 export const API_KEY_STORAGE_KEY = 'anthropic_api_key';
 export const BASE_URL_STORAGE_KEY = 'backend_base_url';
+export const PLAN_STORAGE_KEY = 'selected_plan';
+
+export type Plan = 'free' | 'paid';
 const DEFAULT_BASE_URL = ENV.BACKEND_URL;
 
 // ─────────────────────────────────────────
@@ -107,6 +110,25 @@ export async function hasApiKey(): Promise<boolean> {
   return !!key && key.length > 10;
 }
 
+// ─────────────────────────────────────────
+// Plan helpers
+// ─────────────────────────────────────────
+
+export async function savePlan(plan: Plan): Promise<void> {
+  await SecureStore.setItemAsync(PLAN_STORAGE_KEY, plan);
+}
+
+export async function getPlan(): Promise<Plan | null> {
+  const stored = await SecureStore.getItemAsync(PLAN_STORAGE_KEY);
+  if (stored === 'free' || stored === 'paid') return stored;
+  return null;
+}
+
+export async function hasPlanSelected(): Promise<boolean> {
+  const plan = await getPlan();
+  return plan !== null;
+}
+
 export async function saveBaseUrl(url: string): Promise<void> {
   await SecureStore.setItemAsync(BASE_URL_STORAGE_KEY, url);
 }
@@ -168,30 +190,34 @@ async function createClient() {
 export async function uploadPDF(
   fileUri: string,
   fileName: string,
-  apiKey: string
+  apiKey: string,
+  plan: Plan = 'paid'
 ): Promise<UploadResponse> {
   const client = await createClient();
   const form = new FormData();
   form.append('file', { uri: fileUri, name: fileName, type: 'application/pdf' } as any);
+  form.append('plan', plan);
 
-  const res = await client.post<UploadResponse>('/upload', form, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      'X-API-Key': apiKey,
-    },
-  });
+  const headers: Record<string, string> = { 'Content-Type': 'multipart/form-data' };
+  if (plan === 'paid' && apiKey) headers['X-API-Key'] = apiKey;
+
+  const res = await client.post<UploadResponse>('/upload', form, { headers });
   return res.data;
 }
 
 export async function startGeneration(
   sessionId: string,
-  apiKey: string
+  apiKey: string,
+  plan: Plan = 'paid'
 ): Promise<void> {
   const client = await createClient();
+  const headers: Record<string, string> = {};
+  if (plan === 'paid' && apiKey) headers['X-API-Key'] = apiKey;
+
   await client.post(
     '/generate',
-    { session_id: sessionId },
-    { headers: { 'X-API-Key': apiKey } }
+    { session_id: sessionId, plan },
+    { headers }
   );
 }
 

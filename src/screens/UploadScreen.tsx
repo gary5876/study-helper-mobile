@@ -5,7 +5,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import {
-  getApiKey, uploadPDF, startGeneration, waitForCompletion, StudyContent,
+  getApiKey, getPlan, uploadPDF, startGeneration, waitForCompletion, StudyContent,
 } from '../services/api';
 import {
   createSession, updateSessionStatus, saveStudyContent,
@@ -42,8 +42,9 @@ export default function UploadScreen({ navigation }: Props) {
       return;
     }
 
-    const apiKey = await getApiKey();
-    if (!apiKey) {
+    const plan = (await getPlan()) ?? 'paid';
+    const apiKey = plan === 'paid' ? (await getApiKey() ?? '') : '';
+    if (plan === 'paid' && !apiKey) {
       Alert.alert('API Key missing', 'Please set your Anthropic API key in settings.');
       return;
     }
@@ -54,7 +55,7 @@ export default function UploadScreen({ navigation }: Props) {
       setProgress(0.05);
       setStatusText('Uploading PDF…');
 
-      const uploadRes = await uploadPDF(asset.uri, name, apiKey);
+      const uploadRes = await uploadPDF(asset.uri, name, apiKey, plan);
 
       // Save session record locally
       await createSession({
@@ -68,7 +69,7 @@ export default function UploadScreen({ navigation }: Props) {
       setStage('generating');
       setProgress(0.1);
       setStatusText('Analyzing PDF…');
-      await startGeneration(uploadRes.session_id, apiKey);
+      await startGeneration(uploadRes.session_id, apiKey, plan);
 
       // Poll until complete
       const content: StudyContent = await waitForCompletion(

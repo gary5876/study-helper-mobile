@@ -5,11 +5,12 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-03-22)
+## 현재 상태 (2026-03-24)
 
 ### 완성된 화면 및 기능
 
-- [x] **ApiKeySetupScreen** — API 키 온보딩 (Expo SecureStore 암호화 저장)
+- [x] **PlanSelectionScreen** — 최초 온보딩: 무료(Gemini) / 유료(Anthropic) 플랜 선택
+- [x] **ApiKeySetupScreen** — 유료 플랜 API 키 온보딩 (Expo SecureStore 암호화 저장)
 - [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB
 - [x] **UploadScreen** — PDF 선택 + 업로드 + 생성 진행률 실시간 표시
 - [x] **StudyNotesScreen** — 핵심 개념 칩 · 섹션 요약 · 용어집
@@ -32,12 +33,22 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ## 화면별 상세 플로우
 
-### 1. ApiKeySetupScreen (`ApiKeySetup`)
+### 1. PlanSelectionScreen (`PlanSelection`)
 
-최초 실행 시 진입. API 키가 SecureStore에 저장되어 있으면 자동 건너뜀.
+최초 실행 시 진입. 플랜이 이미 선택되어 있으면 자동 건너뜀.
 
 ```
-진입 조건: SecureStore에 API 키 없음
+진입 조건: 플랜 미선택 (hasPlanSelected() === false)
+  ├─▶ 무료 플랜 선택 → savePlan('free') → HomeScreen
+  └─▶ 유료 플랜 선택 → savePlan('paid') → ApiKeySetupScreen
+```
+
+### 2. ApiKeySetupScreen (`ApiKeySetup`)
+
+유료 플랜 선택 시 진입. API 키가 SecureStore에 저장되어 있으면 자동 건너뜀.
+
+```
+진입 조건: 유료 플랜 선택 && SecureStore에 API 키 없음
   └─▶ Anthropic API 키 입력 (sk-ant-...)
   └─▶ 백엔드 URL 설정 (기본값: 프로덕션 또는 localhost)
   └─▶ 저장 → HomeScreen
@@ -59,8 +70,9 @@ PDF 선택 → 업로드 → 생성 → StudyNotes.
 
 ```
   └─▶ expo-document-picker로 PDF 선택
-  └─▶ POST /upload (X-API-Key 헤더)
-  └─▶ POST /generate
+  └─▶ getPlan() 로드 → plan 인식
+  └─▶ POST /upload (plan 필드 포함 · 유료 플랜만 X-API-Key 헤더)
+  └─▶ POST /generate (plan + session_id · 유료 플랜만 X-API-Key 헤더)
   └─▶ GET /status 폴링 (3초 간격, 최대 5분)
         5%  → 업로드 완료
         40% → 학습 노트 생성됨
@@ -235,6 +247,7 @@ React Navigation Native Stack 기반.
 
 ```typescript
 RootStackParamList = {
+  PlanSelection: undefined,
   ApiKeySetup: undefined,
   Home: undefined,
   Upload: undefined,
@@ -247,14 +260,20 @@ RootStackParamList = {
 }
 ```
 
-초기 라우트: `hasApiKey() ? 'Home' : 'ApiKeySetup'`
+초기 라우트 결정 로직:
+```
+hasPlanSelected() === false                     → PlanSelection
+getPlan() === 'paid' && hasApiKey() === false   → ApiKeySetup
+그 외                                            → Home
+```
 
 ---
 
 ## API 통신 (`src/services/api.ts`)
 
 - **Base URL**: `app.config.ts` 또는 `.env`에서 주입 (앱 내 변경 가능)
-- **API 키**: `X-API-Key` 헤더 (Expo SecureStore에서 로드)
+- **API 키**: `X-API-Key` 헤더 (유료 플랜만 — Expo SecureStore에서 로드)
+- **플랜 헬퍼**: `savePlan(plan)` / `getPlan()` / `hasPlanSelected()` — AsyncStorage 기반
 - **타임아웃**: 요청당 120초
 - **재시도**: 네트워크 오류 / 5xx 응답 시 3회, 지수 백오프 (1s → 2s → 4s)
 - **비재시도**: 4xx 클라이언트 오류, 429 Rate Limit
@@ -336,7 +355,8 @@ maestro test .maestro/03_mcq_quiz_flow.yaml
 src/
 ├── config/
 │   └── env.ts                 환경별 설정 (BACKEND_URL 등)
-├── screens/                   화면 9개
+├── screens/                   화면 10개
+│   ├── PlanSelectionScreen.tsx
 │   ├── ApiKeySetupScreen.tsx
 │   ├── HomeScreen.tsx
 │   ├── UploadScreen.tsx
