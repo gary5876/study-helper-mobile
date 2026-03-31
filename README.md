@@ -54,7 +54,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 진입 조건: 비무료 플랜 선택 && SecureStore에 API 키 없음
   ├─▶ paid   → Anthropic API 키 입력 (sk-ant-...)
   ├─▶ gpt    → OpenAI API 키 입력 (sk-...)
-  ├─▶ timely → TimelyGPT API 키 입력 (sdk_live_...)
+  ├─▶ timely → TimelyGPT API 키 입력 (timelygpt.co.kr 발급)
   └─▶ 저장 → HomeScreen
 ```
 
