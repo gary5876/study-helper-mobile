@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
-import { hasPlanSelected, getPlan } from '../services/api';
+import { hasPlanSelected, getPlan, hasApiKey } from '../services/api';
 
 // Screens
 import PlanSelectionScreen from '../screens/PlanSelectionScreen';
@@ -44,7 +44,6 @@ export default function AppNavigator() {
       const plan = await getPlan();
       // paid plan: need API key setup if not done yet
       if (plan === 'paid') {
-        const { hasApiKey } = await import('../services/api');
         const hasKey = await hasApiKey();
         setInitialRoute(hasKey ? 'Home' : 'ApiKeySetup');
       } else {
