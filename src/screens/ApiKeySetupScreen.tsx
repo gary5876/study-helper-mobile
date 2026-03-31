@@ -37,10 +37,10 @@ const PLAN_META: Record<Exclude<Plan, 'free'>, PlanMeta> = {
   timely: {
     title: 'TimelyGPT API 키 입력',
     description: '키는 기기 내에만 안전하게 저장됩니다. 서버로 전송되지 않습니다.',
-    placeholder: 'sdk_live_...',
+    placeholder: 'tgpt-sk-...',
     link: 'timelygpt.co.kr에서 발급',
-    validate: (k) => k.startsWith('sdk_live_') && k.length > 10,
-    validationMsg: 'TimelyGPT API 키는 sdk_live_ 로 시작해야 합니다.',
+    validate: (k) => k.length > 10,
+    validationMsg: 'TimelyGPT API 키를 올바르게 입력해 주세요.',
   },
 };
 
