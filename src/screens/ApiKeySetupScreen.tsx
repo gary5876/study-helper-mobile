@@ -1,12 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Text, TextInput, Button, Card, HelperText } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { saveApiKey, saveBaseUrl } from '../services/api';
+import { saveApiKey, saveBaseUrl, getPlan, Plan } from '../services/api';
 import { ENV } from '../config/env';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ApiKeySetup'>;
+
+interface PlanMeta {
+  title: string;
+  description: string;
+  placeholder: string;
+  link: string;
+  validate: (key: string) => boolean;
+  validationMsg: string;
+}
+
+const PLAN_META: Record<Exclude<Plan, 'free'>, PlanMeta> = {
+  paid: {
+    title: 'Anthropic API 키 입력',
+    description: '키는 기기 내에만 안전하게 저장됩니다. 서버로 전송되지 않습니다.',
+    placeholder: 'sk-ant-api03-...',
+    link: 'console.anthropic.com에서 발급',
+    validate: (k) => k.startsWith('sk-ant-') && k.length > 20,
+    validationMsg: 'Anthropic API 키는 sk-ant- 로 시작해야 합니다.',
+  },
+  gpt: {
+    title: 'OpenAI API 키 입력',
+    description: '키는 기기 내에만 안전하게 저장됩니다. 서버로 전송되지 않습니다.',
+    placeholder: 'sk-...',
+    link: 'platform.openai.com에서 발급',
+    validate: (k) => k.startsWith('sk-') && k.length > 20,
+    validationMsg: 'OpenAI API 키는 sk- 로 시작해야 합니다.',
+  },
+  timely: {
+    title: 'TimelyGPT API 키 입력',
+    description: '키는 기기 내에만 안전하게 저장됩니다. 서버로 전송되지 않습니다.',
+    placeholder: 'sdk_live_...',
+    link: 'timelygpt.co.kr에서 발급',
+    validate: (k) => k.startsWith('sdk_live_') && k.length > 10,
+    validationMsg: 'TimelyGPT API 키는 sdk_live_ 로 시작해야 합니다.',
+  },
+};
 
 export default function ApiKeySetupScreen({ navigation }: Props) {
   const [apiKey, setApiKey] = useState('');
@@ -14,12 +50,18 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [plan, setPlan] = useState<Plan>('paid');
 
-  const isValidKey = apiKey.trim().startsWith('sk-ant-') && apiKey.trim().length > 20;
+  useEffect(() => {
+    getPlan().then((p) => { if (p && p !== 'free') setPlan(p); });
+  }, []);
+
+  const meta = PLAN_META[plan as Exclude<Plan, 'free'>] ?? PLAN_META.paid;
+  const isValidKey = meta.validate(apiKey.trim());
 
   async function handleSave() {
     if (!isValidKey) {
-      setError('Please enter a valid Anthropic API key (starts with sk-ant-).');
+      setError(meta.validationMsg);
       return;
     }
     setLoading(true);
@@ -29,7 +71,7 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
       await saveBaseUrl(baseUrl.trim() || ENV.BACKEND_URL);
       navigation.replace('Home');
     } catch (e) {
-      setError('Failed to save settings. Please try again.');
+      setError('설정 저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -51,19 +93,19 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
         <Card style={styles.card}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.sectionTitle}>
-              Enter Your Anthropic API Key
+              {meta.title}
             </Text>
             <Text variant="bodySmall" style={styles.description}>
-              Your key is stored securely on your device only. It is never sent to our servers.
+              {meta.description}
             </Text>
 
             <TextInput
-              label="Anthropic API Key"
+              label="API Key"
               value={apiKey}
               onChangeText={(t) => { setApiKey(t); setError(''); }}
               secureTextEntry
               mode="outlined"
-              placeholder="sk-ant-api03-..."
+              placeholder={meta.placeholder}
               style={styles.input}
               autoCapitalize="none"
               autoCorrect={false}
@@ -75,7 +117,7 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
               onPress={() => setShowAdvanced(!showAdvanced)}
               style={styles.advancedToggle}
             >
-              {showAdvanced ? 'Hide advanced settings' : 'Advanced settings'}
+              {showAdvanced ? '고급 설정 숨기기' : '고급 설정'}
             </Button>
 
             {showAdvanced && (
@@ -99,13 +141,13 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
               style={styles.button}
               contentStyle={styles.buttonContent}
             >
-              Get Started
+              시작하기
             </Button>
           </Card.Content>
         </Card>
 
         <Text variant="bodySmall" style={styles.footer}>
-          Get your key at console.anthropic.com
+          {meta.link}
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

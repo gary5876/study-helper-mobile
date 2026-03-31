@@ -18,6 +18,16 @@ export default function PlanSelectionScreen({ navigation }: Props) {
     navigation.replace('ApiKeySetup');
   }
 
+  async function handleSelectGpt() {
+    await savePlan('gpt');
+    navigation.replace('ApiKeySetup');
+  }
+
+  async function handleSelectTimely() {
+    await savePlan('timely');
+    navigation.replace('ApiKeySetup');
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text variant="headlineMedium" style={styles.title}>
@@ -49,20 +59,60 @@ export default function PlanSelectionScreen({ navigation }: Props) {
 
       <Card style={styles.card} mode="outlined">
         <Card.Content>
-          <Text variant="titleLarge" style={styles.planTitle}>유료 플랜</Text>
+          <Text variant="titleLarge" style={styles.planTitle}>Anthropic Claude</Text>
           <Text variant="bodyMedium" style={styles.planDesc}>
             본인의 Anthropic API 키를 사용합니다.{'\n'}
-            Claude Sonnet 모델로 더 높은 품질의 콘텐츠를 생성합니다.
+            Claude Sonnet 모델로 높은 품질의 콘텐츠를 생성합니다.
           </Text>
           <Text variant="bodySmall" style={styles.planNote}>
             • Anthropic API 키 필요 (sk-ant-...){'\n'}
             • Claude Sonnet 사용{'\n'}
-            • API 사용량에 따라 비용 발생
+            • console.anthropic.com에서 발급
           </Text>
         </Card.Content>
         <Card.Actions>
           <Button mode="outlined" onPress={handleSelectPaid} style={styles.button}>
-            API 키로 시작
+            Anthropic 키로 시작
+          </Button>
+        </Card.Actions>
+      </Card>
+
+      <Card style={styles.card} mode="outlined">
+        <Card.Content>
+          <Text variant="titleLarge" style={styles.planTitle}>OpenAI GPT</Text>
+          <Text variant="bodyMedium" style={styles.planDesc}>
+            본인의 OpenAI API 키를 사용합니다.{'\n'}
+            GPT-4o-mini 모델로 학습 콘텐츠를 생성합니다.
+          </Text>
+          <Text variant="bodySmall" style={styles.planNote}>
+            • OpenAI API 키 필요 (sk-...){'\n'}
+            • GPT-4o-mini 사용{'\n'}
+            • platform.openai.com에서 발급
+          </Text>
+        </Card.Content>
+        <Card.Actions>
+          <Button mode="outlined" onPress={handleSelectGpt} style={styles.button}>
+            OpenAI 키로 시작
+          </Button>
+        </Card.Actions>
+      </Card>
+
+      <Card style={styles.card} mode="outlined">
+        <Card.Content>
+          <Text variant="titleLarge" style={styles.planTitle}>TimelyGPT</Text>
+          <Text variant="bodyMedium" style={styles.planDesc}>
+            TimelyGPT API 키로 GPT·Claude·Gemini 등{'\n'}
+            50개 이상의 모델 중 선택해 사용합니다.
+          </Text>
+          <Text variant="bodySmall" style={styles.planNote}>
+            • TimelyGPT API 키 필요 (sdk_live_...){'\n'}
+            • 50+ 모델 지원{'\n'}
+            • timelygpt.co.kr에서 발급
+          </Text>
+        </Card.Content>
+        <Card.Actions>
+          <Button mode="outlined" onPress={handleSelectTimely} style={styles.button}>
+            TimelyGPT 키로 시작
           </Button>
         </Card.Actions>
       </Card>

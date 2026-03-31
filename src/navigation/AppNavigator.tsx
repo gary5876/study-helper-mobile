@@ -42,8 +42,8 @@ export default function AppNavigator() {
         return;
       }
       const plan = await getPlan();
-      // paid plan: need API key setup if not done yet
-      if (plan === 'paid') {
+      // non-free plans require an API key
+      if (plan !== 'free') {
         const hasKey = await hasApiKey();
         setInitialRoute(hasKey ? 'Home' : 'ApiKeySetup');
       } else {

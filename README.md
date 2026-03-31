@@ -5,12 +5,12 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-03-24)
+## 현재 상태 (2026-03-31)
 
 ### 완성된 화면 및 기능
 
-- [x] **PlanSelectionScreen** — 최초 온보딩: 무료(Gemini) / 유료(Anthropic) 플랜 선택
-- [x] **ApiKeySetupScreen** — 유료 플랜 API 키 온보딩 (Expo SecureStore 암호화 저장)
+- [x] **PlanSelectionScreen** — 최초 온보딩: 무료(Gemini) / Anthropic / OpenAI GPT / TimelyGPT 4개 플랜 선택
+- [x] **ApiKeySetupScreen** — 플랜별 동적 UI (제목·placeholder·검증 규칙·발급 링크 자동 변경)
 - [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB
 - [x] **UploadScreen** — PDF 선택 + 업로드 + 생성 진행률 실시간 표시
 - [x] **StudyNotesScreen** — 핵심 개념 칩 · 섹션 요약 · 용어집
@@ -39,18 +39,22 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ```
 진입 조건: 플랜 미선택 (hasPlanSelected() === false)
-  ├─▶ 무료 플랜 선택 → savePlan('free') → HomeScreen
-  └─▶ 유료 플랜 선택 → savePlan('paid') → ApiKeySetupScreen
+  ├─▶ 무료 플랜 선택      → savePlan('free')   → HomeScreen
+  ├─▶ Anthropic 선택     → savePlan('paid')   → ApiKeySetupScreen
+  ├─▶ OpenAI GPT 선택    → savePlan('gpt')    → ApiKeySetupScreen
+  └─▶ TimelyGPT 선택     → savePlan('timely') → ApiKeySetupScreen
 ```
 
 ### 2. ApiKeySetupScreen (`ApiKeySetup`)
 
-유료 플랜 선택 시 진입. API 키가 SecureStore에 저장되어 있으면 자동 건너뜀.
+비무료 플랜 선택 시 진입. API 키가 SecureStore에 저장되어 있으면 자동 건너뜀.
+플랜에 따라 제목·placeholder·유효성 검사·발급 링크가 동적으로 변경됩니다.
 
 ```
-진입 조건: 유료 플랜 선택 && SecureStore에 API 키 없음
-  └─▶ Anthropic API 키 입력 (sk-ant-...)
-  └─▶ 백엔드 URL 설정 (기본값: 프로덕션 또는 localhost)
+진입 조건: 비무료 플랜 선택 && SecureStore에 API 키 없음
+  ├─▶ paid   → Anthropic API 키 입력 (sk-ant-...)
+  ├─▶ gpt    → OpenAI API 키 입력 (sk-...)
+  ├─▶ timely → TimelyGPT API 키 입력 (sdk_live_...)
   └─▶ 저장 → HomeScreen
 ```
 
@@ -272,8 +276,9 @@ getPlan() === 'paid' && hasApiKey() === false   → ApiKeySetup
 ## API 통신 (`src/services/api.ts`)
 
 - **Base URL**: `app.config.ts` 또는 `.env`에서 주입 (앱 내 변경 가능)
-- **API 키**: `X-API-Key` 헤더 (유료 플랜만 — Expo SecureStore에서 로드)
-- **플랜 헬퍼**: `savePlan(plan)` / `getPlan()` / `hasPlanSelected()` — AsyncStorage 기반
+- **API 키**: `X-API-Key` 헤더 (비무료 플랜만 — Expo SecureStore에서 로드)
+- **Plan 타입**: `'free' | 'paid' | 'gpt' | 'timely'`
+- **플랜 헬퍼**: `savePlan(plan)` / `getPlan()` / `hasPlanSelected()` — SecureStore 기반
 - **타임아웃**: 요청당 120초
 - **재시도**: 네트워크 오류 / 5xx 응답 시 3회, 지수 백오프 (1s → 2s → 4s)
 - **비재시도**: 4xx 클라이언트 오류, 429 Rate Limit

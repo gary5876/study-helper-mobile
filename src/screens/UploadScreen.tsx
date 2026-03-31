@@ -43,9 +43,9 @@ export default function UploadScreen({ navigation }: Props) {
     }
 
     const plan = (await getPlan()) ?? 'paid';
-    const apiKey = plan === 'paid' ? (await getApiKey() ?? '') : '';
-    if (plan === 'paid' && !apiKey) {
-      Alert.alert('API Key missing', 'Please set your Anthropic API key in settings.');
+    const apiKey = plan !== 'free' ? (await getApiKey() ?? '') : '';
+    if (plan !== 'free' && !apiKey) {
+      Alert.alert('API 키 없음', '설정에서 API 키를 먼저 입력해주세요.');
       return;
     }
 
