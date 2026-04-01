@@ -11,7 +11,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 - [x] **PlanSelectionScreen** — 최초 온보딩: 무료(Gemini) / Anthropic / OpenAI GPT / TimelyGPT 4개 플랜 선택
 - [x] **ApiKeySetupScreen** — 플랜별 동적 UI (제목·placeholder·검증 규칙·발급 링크 자동 변경)
-- [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB
+- [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB, 플랜 변경 설정 아이콘
 - [x] **UploadScreen** — PDF 선택 + 업로드 + 생성 진행률 실시간 표시
 - [x] **StudyNotesScreen** — 핵심 개념 칩 · 섹션 요약 · 용어집
 - [x] **MCQScreen** — 4지선다 퀴즈, 즉각 피드백, 개념 설명
@@ -36,13 +36,17 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 ### 1. PlanSelectionScreen (`PlanSelection`)
 
 최초 실행 시 진입. 플랜이 이미 선택되어 있으면 자동 건너뜀.
+HomeScreen 헤더의 설정(⚙) 아이콘으로 언제든 재진입 가능.
 
 ```
-진입 조건: 플랜 미선택 (hasPlanSelected() === false)
+진입 조건 A: 플랜 미선택 (hasPlanSelected() === false) — 초기 온보딩
+진입 조건 B: HomeScreen 헤더 설정 아이콘 탭 — 플랜 변경
   ├─▶ 무료 플랜 선택      → savePlan('free')   → HomeScreen
   ├─▶ Anthropic 선택     → savePlan('paid')   → ApiKeySetupScreen
   ├─▶ OpenAI GPT 선택    → savePlan('gpt')    → ApiKeySetupScreen
   └─▶ TimelyGPT 선택     → savePlan('timely') → ApiKeySetupScreen
+
+※ 플랜 변경 시 navigation.reset으로 스택 초기화 (뒤로가기 꼬임 방지)
 ```
 
 ### 2. ApiKeySetupScreen (`ApiKeySetup`)
@@ -65,7 +69,8 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 ```
   ├─▶ 세션 탭 → StudyNotesScreen (기존 세션)
   ├─▶ 복습 예정 카운터 (SM-2 due_date <= 오늘)
-  └─▶ FAB (+) → UploadScreen
+  ├─▶ FAB (+) → UploadScreen
+  └─▶ 헤더 설정(⚙) 아이콘 → PlanSelectionScreen (플랜 변경)
 ```
 
 ### 3. UploadScreen (`Upload`)
@@ -275,7 +280,7 @@ getPlan() === 'paid' && hasApiKey() === false   → ApiKeySetup
 
 ## API 통신 (`src/services/api.ts`)
 
-- **Base URL**: `app.config.ts` 또는 `.env`에서 주입 (앱 내 변경 가능)
+- **Base URL**: `app.config.ts` 또는 `.env`에서 주입 (빌드 시 환경변수로만 설정)
 - **API 키**: `X-API-Key` 헤더 (비무료 플랜만 — Expo SecureStore에서 로드)
 - **Plan 타입**: `'free' | 'paid' | 'gpt' | 'timely'`
 - **플랜 헬퍼**: `savePlan(plan)` / `getPlan()` / `hasPlanSelected()` — SecureStore 기반
@@ -292,8 +297,6 @@ getPlan() === 'paid' && hasApiKey() === false   → ApiKeySetup
 | `BACKEND_URL` | `http://localhost:8000` | 백엔드 서버 URL |
 | `SENTRY_DSN` | `""` | Sentry DSN (프로덕션에서 설정 권장) |
 | `APP_ENVIRONMENT` | `development` | `development` / `staging` / `production` |
-
-앱 내 **Advanced Settings**에서 백엔드 URL을 런타임에도 변경할 수 있습니다.
 
 ---
 
