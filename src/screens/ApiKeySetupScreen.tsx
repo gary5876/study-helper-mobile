@@ -3,8 +3,7 @@ import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 're
 import { Text, TextInput, Button, Card, HelperText } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { saveApiKey, saveBaseUrl, getPlan, Plan } from '../services/api';
-import { ENV } from '../config/env';
+import { saveApiKey, getPlan, Plan } from '../services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ApiKeySetup'>;
 
@@ -46,10 +45,8 @@ const PLAN_META: Record<Exclude<Plan, 'free'>, PlanMeta> = {
 
 export default function ApiKeySetupScreen({ navigation }: Props) {
   const [apiKey, setApiKey] = useState('');
-  const [baseUrl, setBaseUrl] = useState(ENV.BACKEND_URL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [plan, setPlan] = useState<Plan>('paid');
 
   useEffect(() => {
@@ -68,7 +65,6 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
     setError('');
     try {
       await saveApiKey(apiKey.trim());
-      await saveBaseUrl(baseUrl.trim() || ENV.BACKEND_URL);
       navigation.replace('Home');
     } catch (e) {
       setError('설정 저장에 실패했습니다. 다시 시도해주세요.');
@@ -113,27 +109,6 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
             {!!error && <HelperText type="error">{error}</HelperText>}
 
             <Button
-              mode="text"
-              onPress={() => setShowAdvanced(!showAdvanced)}
-              style={styles.advancedToggle}
-            >
-              {showAdvanced ? '고급 설정 숨기기' : '고급 설정'}
-            </Button>
-
-            {showAdvanced && (
-              <TextInput
-                label="Backend URL"
-                value={baseUrl}
-                onChangeText={setBaseUrl}
-                mode="outlined"
-                placeholder={ENV.BACKEND_URL}
-                style={styles.input}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            )}
-
-            <Button
               mode="contained"
               onPress={handleSave}
               loading={loading}
@@ -164,7 +139,6 @@ const styles = StyleSheet.create({
   sectionTitle: { fontWeight: 'bold', marginBottom: 8 },
   description: { color: '#666', marginBottom: 16, lineHeight: 18 },
   input: { marginBottom: 12 },
-  advancedToggle: { alignSelf: 'flex-start', marginBottom: 4 },
   button: { marginTop: 8, borderRadius: 8 },
   buttonContent: { paddingVertical: 6 },
   footer: { color: '#666', textAlign: 'center', marginTop: 24 },
