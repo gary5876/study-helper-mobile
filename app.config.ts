@@ -54,7 +54,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   owner: 'fundamentals',
   extra: {
-    backendUrl: process.env.BACKEND_URL || 'https://study-helper-backend-production.up.railway.app',
+    backendUrl: process.env.BACKEND_URL || '',
     environment: process.env.APP_ENVIRONMENT || 'development',
     eas: {
       projectId: '165d5a36-a5e2-4d7b-aef9-4de9374d73aa',
