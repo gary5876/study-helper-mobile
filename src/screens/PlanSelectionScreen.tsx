@@ -2,30 +2,40 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Button, Card } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { CommonActions } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { savePlan } from '../services/api';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanSelection'>;
 
 export default function PlanSelectionScreen({ navigation }: Props) {
+  // 초기 온보딩: replace 사용 / 홈에서 설정 진입: 스택 초기화
+  function goTo(screen: keyof RootStackParamList) {
+    if (navigation.canGoBack()) {
+      navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: screen }] }));
+    } else {
+      navigation.replace(screen as any);
+    }
+  }
+
   async function handleSelectFree() {
     await savePlan('free');
-    navigation.replace('Home');
+    goTo('Home');
   }
 
   async function handleSelectPaid() {
     await savePlan('paid');
-    navigation.replace('ApiKeySetup');
+    goTo('ApiKeySetup');
   }
 
   async function handleSelectGpt() {
     await savePlan('gpt');
-    navigation.replace('ApiKeySetup');
+    goTo('ApiKeySetup');
   }
 
   async function handleSelectTimely() {
     await savePlan('timely');
-    navigation.replace('ApiKeySetup');
+    goTo('ApiKeySetup');
   }
 
   return (
@@ -105,7 +115,7 @@ export default function PlanSelectionScreen({ navigation }: Props) {
             50개 이상의 모델 중 선택해 사용합니다.
           </Text>
           <Text variant="bodySmall" style={styles.planNote}>
-            • TimelyGPT API 키 필요 (sdk_live_...){'\n'}
+            • TimelyGPT API 키 필요 (timelygpt.co.kr 발급){'\n'}
             • 50+ 모델 지원{'\n'}
             • timelygpt.co.kr에서 발급
           </Text>

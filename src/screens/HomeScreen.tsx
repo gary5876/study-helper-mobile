@@ -53,11 +53,19 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Header */}
       <View style={styles.header}>
         <Text variant="headlineMedium" style={styles.title}>Fundamentals</Text>
-        {dueReviews > 0 && (
-          <Chip icon="bell" style={styles.reviewChip} textStyle={{ color: '#fff' }}>
-            {dueReviews} due for review
-          </Chip>
-        )}
+        <View style={styles.headerRight}>
+          {dueReviews > 0 && (
+            <Chip icon="bell" style={styles.reviewChip} textStyle={{ color: '#fff' }}>
+              {dueReviews} due for review
+            </Chip>
+          )}
+          <IconButton
+            icon="cog"
+            iconColor="#fff"
+            size={24}
+            onPress={() => navigation.navigate('PlanSelection')}
+          />
+        </View>
       </View>
 
       <Divider />
@@ -125,6 +133,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#6c63ff',
   },
   title: { color: '#fff', fontWeight: 'bold' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   reviewChip: { backgroundColor: '#ff6584' },
   list: { padding: 16, gap: 12 },
   emptyContainer: { flex: 1 },
