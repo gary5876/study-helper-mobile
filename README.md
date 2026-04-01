@@ -11,7 +11,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 - [x] **PlanSelectionScreen** — 최초 온보딩: 무료(Gemini) / Anthropic / OpenAI GPT / TimelyGPT 4개 플랜 선택
 - [x] **ApiKeySetupScreen** — 플랜별 동적 UI (제목·placeholder·검증 규칙·발급 링크 자동 변경)
-- [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB, 플랜 변경 설정 아이콘
+- [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB, 플랜 변경 설정 아이콘, 한/EN 언어 토글
 - [x] **UploadScreen** — PDF 선택 + 업로드 + 생성 진행률 실시간 표시
 - [x] **StudyNotesScreen** — 핵심 개념 칩 · 섹션 요약 · 용어집
 - [x] **MCQScreen** — 4지선다 퀴즈, 즉각 피드백, 개념 설명
@@ -20,6 +20,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 - [x] **WrongAnswerScreen** — 오답 복습 + 신뢰도 평가 → SM-2 스케줄
 - [x] **ReviewConceptScreen** — 개념 전체 정의 + 관련 섹션
 - [x] SQLite 로컬 저장 — 생성 후 100% 오프라인 동작
+- [x] 한국어 기본 UI + 한/EN 전환 (`src/i18n/strings.ts` + `languageStore`, SecureStore 언어 유지)
 - [x] Jest 단위 테스트 27개
 - [x] Maestro E2E 테스트 3개 시나리오
 
