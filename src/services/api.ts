@@ -209,17 +209,17 @@ export async function startGeneration(
   sessionId: string,
   apiKey: string,
   plan: Plan = 'paid',
-  lang: 'ko' | 'en' = 'ko'
+  lang: 'ko' | 'en' = 'ko',
+  model?: string,
 ): Promise<void> {
   const client = await createClient();
   const headers: Record<string, string> = {};
   if (plan !== 'free' && apiKey) headers['X-API-Key'] = apiKey;
 
-  await client.post(
-    '/generate',
-    { session_id: sessionId, plan, lang },
-    { headers }
-  );
+  const body: Record<string, unknown> = { session_id: sessionId, plan, lang };
+  if (model) body.options = { model };
+
+  await client.post('/generate', body, { headers });
 }
 
 export async function pollStatus(sessionId: string): Promise<StatusResponse> {

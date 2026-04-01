@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, TextInput, Button, Card, HelperText } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { saveApiKey, getPlan, Plan } from '../services/api';
+import { useModelStore, PLAN_MODELS, DEFAULT_MODELS } from '../store/modelStore';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ApiKeySetup'>;
 
@@ -48,6 +51,9 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [plan, setPlan] = useState<Plan>('paid');
+  const { setModel, getModel } = useModelStore();
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     getPlan().then((p) => { if (p && p !== 'free') setPlan(p); });
@@ -55,6 +61,8 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
 
   const meta = PLAN_META[plan as Exclude<Plan, 'free'>] ?? PLAN_META.paid;
   const isValidKey = meta.validate(apiKey.trim());
+  const selectedModel = getModel(plan);
+  const modelList = PLAN_MODELS[plan];
 
   async function handleSave() {
     if (!isValidKey) {
@@ -108,6 +116,25 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
             />
             {!!error && <HelperText type="error">{error}</HelperText>}
 
+            <Text variant="labelMedium" style={styles.modelLabel}>{s.modelSelectLabel}</Text>
+            <View style={styles.modelRow}>
+              {modelList.map((m) => (
+                <TouchableOpacity
+                  key={m}
+                  style={[styles.modelChip, selectedModel === m && styles.modelChipSelected]}
+                  onPress={() => setModel(plan, m)}
+                >
+                  <Text
+                    variant="bodySmall"
+                    style={[styles.modelChipText, selectedModel === m && styles.modelChipTextSelected]}
+                    numberOfLines={1}
+                  >
+                    {m}{m === DEFAULT_MODELS[plan] ? ` ${s.modelSelectDefault}` : ''}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <Button
               mode="contained"
               onPress={handleSave}
@@ -139,6 +166,15 @@ const styles = StyleSheet.create({
   sectionTitle: { fontWeight: 'bold', marginBottom: 8 },
   description: { color: '#666', marginBottom: 16, lineHeight: 18 },
   input: { marginBottom: 12 },
+  modelLabel: { color: '#666', marginBottom: 8, marginTop: 4 },
+  modelRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  modelChip: {
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16,
+    borderWidth: 1, borderColor: '#ccc', backgroundColor: '#f5f5f5',
+  },
+  modelChipSelected: { borderColor: '#6c63ff', backgroundColor: '#ede9ff' },
+  modelChipText: { color: '#555' },
+  modelChipTextSelected: { color: '#6c63ff', fontWeight: '600' },
   button: { marginTop: 8, borderRadius: 8 },
   buttonContent: { paddingVertical: 6 },
   footer: { color: '#666', textAlign: 'center', marginTop: 24 },

@@ -103,6 +103,10 @@ export const STRINGS = {
 
     // ConceptHighlight
     conceptClose: '닫기',
+
+    // ModelSelection (ApiKeySetupScreen)
+    modelSelectLabel: '모델 선택',
+    modelSelectDefault: '(기본값)',
   },
   en: {
     // Navigation
@@ -206,6 +210,10 @@ export const STRINGS = {
 
     // ConceptHighlight
     conceptClose: 'Close',
+
+    // ModelSelection (ApiKeySetupScreen)
+    modelSelectLabel: 'Select Model',
+    modelSelectDefault: '(default)',
   },
 } as const;
 

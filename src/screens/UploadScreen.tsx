@@ -12,6 +12,7 @@ import {
 } from '../services/storage';
 import { useSessionStore } from '../store/sessionStore';
 import { useLanguageStore } from '../store/languageStore';
+import { useModelStore } from '../store/modelStore';
 import { STRINGS } from '../i18n/strings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
@@ -25,6 +26,7 @@ export default function UploadScreen({ navigation }: Props) {
   const [fileName, setFileName] = useState('');
   const setSession = useSessionStore((state) => state.setSession);
   const { lang } = useLanguageStore();
+  const { getModel } = useModelStore();
   const s = STRINGS[lang];
 
   async function handlePick() {
@@ -70,7 +72,8 @@ export default function UploadScreen({ navigation }: Props) {
       setStage('generating');
       setProgress(0.1);
       setStatusText(s.uploadAnalyzing);
-      await startGeneration(uploadRes.session_id, apiKey, plan, lang);
+      const model = getModel(plan);
+      await startGeneration(uploadRes.session_id, apiKey, plan, lang, model);
 
       const content: StudyContent = await waitForCompletion(
         uploadRes.session_id,
