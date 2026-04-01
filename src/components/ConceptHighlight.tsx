@@ -2,6 +2,8 @@ import React from 'react';
 import { View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Text, Chip, Surface, Button } from 'react-native-paper';
 import { KeyConcept } from '../services/api';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 interface Props {
   concept: KeyConcept;
@@ -9,6 +11,9 @@ interface Props {
 }
 
 export default function ConceptHighlight({ concept, onClose }: Props) {
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
+
   const importanceColor = (imp: KeyConcept['importance']) => {
     switch (imp) {
       case 'high': return '#e53935';
@@ -33,7 +38,7 @@ export default function ConceptHighlight({ concept, onClose }: Props) {
             </View>
             <Text variant="bodyLarge" style={styles.definition}>{concept.definition}</Text>
             <Button mode="contained" onPress={onClose} style={styles.closeBtn}>
-              Close
+              {s.conceptClose}
             </Button>
           </Surface>
         </TouchableOpacity>

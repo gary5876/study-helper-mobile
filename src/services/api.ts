@@ -208,7 +208,8 @@ export async function uploadPDF(
 export async function startGeneration(
   sessionId: string,
   apiKey: string,
-  plan: Plan = 'paid'
+  plan: Plan = 'paid',
+  lang: 'ko' | 'en' = 'ko'
 ): Promise<void> {
   const client = await createClient();
   const headers: Record<string, string> = {};
@@ -216,7 +217,7 @@ export async function startGeneration(
 
   await client.post(
     '/generate',
-    { session_id: sessionId, plan },
+    { session_id: sessionId, plan, lang },
     { headers }
   );
 }

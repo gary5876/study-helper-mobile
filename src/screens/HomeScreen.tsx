@@ -2,12 +2,14 @@ import React, { useCallback, useState } from 'react';
 import {
   View, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Alert,
 } from 'react-native';
-import { Text, FAB, Card, Chip, IconButton, Divider } from 'react-native-paper';
+import { Text, FAB, Card, Chip, IconButton, Divider, Button } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getAllSessions, getPendingReviewCount, SessionRow } from '../services/storage';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
@@ -15,14 +17,15 @@ export default function HomeScreen({ navigation }: Props) {
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [dueReviews, setDueReviews] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const { lang, toggle } = useLanguageStore();
+  const s = STRINGS[lang];
 
   const load = useCallback(async () => {
     try {
-      const [s, d] = await Promise.all([getAllSessions(), getPendingReviewCount()]);
-      setSessions(s);
+      const [sess, d] = await Promise.all([getAllSessions(), getPendingReviewCount()]);
+      setSessions(sess);
       setDueReviews(d);
     } catch (err: any) {
-      
       Alert.alert('Error', 'Failed to load sessions. Please restart the app.');
     }
   }, []);
@@ -44,6 +47,15 @@ export default function HomeScreen({ navigation }: Props) {
     }
   }
 
+  function statusLabel(status: SessionRow['status']): string {
+    switch (status) {
+      case 'ready': return s.homeStatusReady;
+      case 'pending': return s.homeStatusPending;
+      case 'failed': return s.homeStatusFailed;
+      default: return status;
+    }
+  }
+
   function formatDate(ts: number): string {
     return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
@@ -56,9 +68,18 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={styles.headerRight}>
           {dueReviews > 0 && (
             <Chip icon="bell" style={styles.reviewChip} textStyle={{ color: '#fff' }}>
-              {dueReviews} due for review
+              {dueReviews} {s.homeDueReview}
             </Chip>
           )}
+          <Button
+            mode="text"
+            compact
+            onPress={toggle}
+            textColor="#fff"
+            style={styles.langBtn}
+          >
+            {lang === 'ko' ? 'EN' : '한'}
+          </Button>
           <IconButton
             icon="cog"
             iconColor="#fff"
@@ -78,10 +99,8 @@ export default function HomeScreen({ navigation }: Props) {
         contentContainerStyle={sessions.length === 0 ? styles.emptyContainer : styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text variant="titleLarge" style={styles.emptyTitle}>No sessions yet</Text>
-            <Text variant="bodyMedium" style={styles.emptyText}>
-              Tap the + button to upload a PDF and start studying.
-            </Text>
+            <Text variant="titleLarge" style={styles.emptyTitle}>{s.homeNoSessions}</Text>
+            <Text variant="bodyMedium" style={styles.emptyText}>{s.homeNoSessionsDesc}</Text>
           </View>
         }
         renderItem={({ item }) => (
@@ -103,7 +122,7 @@ export default function HomeScreen({ navigation }: Props) {
                     style={[styles.statusChip, { backgroundColor: statusColor(item.status) }]}
                     textStyle={{ color: '#fff', fontSize: 11 }}
                   >
-                    {item.status}
+                    {statusLabel(item.status)}
                   </Chip>
                 </View>
                 <Text variant="bodySmall" style={styles.meta}>
@@ -120,7 +139,7 @@ export default function HomeScreen({ navigation }: Props) {
         icon="plus"
         style={styles.fab}
         onPress={() => navigation.navigate('Upload')}
-        label="New Session"
+        label={s.homeNewSession}
       />
     </View>
   );
@@ -130,11 +149,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 16, backgroundColor: '#6c63ff',
+    paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#6c63ff',
   },
   title: { color: '#fff', fontWeight: 'bold' },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   reviewChip: { backgroundColor: '#ff6584' },
+  langBtn: { minWidth: 0 },
   list: { padding: 16, gap: 12 },
   emptyContainer: { flex: 1 },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 48, gap: 12 },

@@ -11,6 +11,8 @@ import {
   createSession, updateSessionStatus, saveStudyContent,
 } from '../services/storage';
 import { useSessionStore } from '../store/sessionStore';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
 
@@ -21,7 +23,9 @@ export default function UploadScreen({ navigation }: Props) {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const [fileName, setFileName] = useState('');
-  const setSession = useSessionStore((s) => s.setSession);
+  const setSession = useSessionStore((state) => state.setSession);
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   async function handlePick() {
     const result = await DocumentPicker.getDocumentAsync({
@@ -38,26 +42,24 @@ export default function UploadScreen({ navigation }: Props) {
 
     const fileSizeMB = (asset.size ?? 0) / (1024 * 1024);
     if (fileSizeMB > 20) {
-      Alert.alert('File too large', 'Please select a PDF under 20MB.');
+      Alert.alert(s.uploadFileTooLarge, s.uploadFileTooLargeDesc);
       return;
     }
 
     const plan = (await getPlan()) ?? 'paid';
     const apiKey = plan !== 'free' ? (await getApiKey() ?? '') : '';
     if (plan !== 'free' && !apiKey) {
-      Alert.alert('API 키 없음', '설정에서 API 키를 먼저 입력해주세요.');
+      Alert.alert(s.uploadNoApiKey, s.uploadNoApiKeyDesc);
       return;
     }
 
     try {
-      // Upload
       setStage('uploading');
       setProgress(0.05);
-      setStatusText('Uploading PDF…');
+      setStatusText(s.uploadUploading);
 
       const uploadRes = await uploadPDF(asset.uri, name, apiKey, plan);
 
-      // Save session record locally
       await createSession({
         id: uploadRes.session_id,
         pdf_name: name,
@@ -65,13 +67,11 @@ export default function UploadScreen({ navigation }: Props) {
         word_count: uploadRes.word_count,
       });
 
-      // Start generation
       setStage('generating');
       setProgress(0.1);
-      setStatusText('Analyzing PDF…');
-      await startGeneration(uploadRes.session_id, apiKey, plan);
+      setStatusText(s.uploadAnalyzing);
+      await startGeneration(uploadRes.session_id, apiKey, plan, lang);
 
-      // Poll until complete
       const content: StudyContent = await waitForCompletion(
         uploadRes.session_id,
         (pct, text) => {
@@ -80,7 +80,6 @@ export default function UploadScreen({ navigation }: Props) {
         }
       );
 
-      // Persist full content to SQLite
       await saveStudyContent({
         session_id: uploadRes.session_id,
         notes_json: JSON.stringify(content.notes),
@@ -89,19 +88,17 @@ export default function UploadScreen({ navigation }: Props) {
       });
       await updateSessionStatus(uploadRes.session_id, 'ready');
 
-      // Load into global store
       setSession(uploadRes.session_id, content);
 
       setStage('done');
       setProgress(1);
-      setStatusText('Ready!');
+      setStatusText(s.uploadDone);
 
-      // Navigate to study notes
       navigation.replace('StudyNotes', { sessionId: uploadRes.session_id });
     } catch (err: any) {
       setStage('error');
-      setStatusText(err?.message || 'Something went wrong.');
-      Alert.alert('Error', err?.message || 'Something went wrong.');
+      setStatusText(err?.message || s.uploadError);
+      Alert.alert(s.uploadFailed, err?.message || s.uploadError);
     }
   }
 
@@ -111,11 +108,8 @@ export default function UploadScreen({ navigation }: Props) {
         <Card.Content style={styles.content}>
           {stage === 'idle' && (
             <>
-              <Text variant="titleLarge" style={styles.title}>Upload a PDF</Text>
-              <Text variant="bodyMedium" style={styles.description}>
-                Choose a text-based PDF (lecture slides, textbook chapters, notes).{'\n'}
-                Maximum size: 20MB · Up to 50 pages processed.
-              </Text>
+              <Text variant="titleLarge" style={styles.title}>{s.uploadTitle}</Text>
+              <Text variant="bodyMedium" style={styles.description}>{s.uploadDesc}</Text>
               <Button
                 mode="contained"
                 onPress={handlePick}
@@ -123,7 +117,7 @@ export default function UploadScreen({ navigation }: Props) {
                 style={styles.button}
                 contentStyle={styles.buttonContent}
               >
-                Choose PDF
+                {s.uploadChoose}
               </Button>
             </>
           )}
@@ -140,10 +134,10 @@ export default function UploadScreen({ navigation }: Props) {
 
           {stage === 'error' && (
             <>
-              <Text variant="titleMedium" style={styles.errorTitle}>Upload failed</Text>
+              <Text variant="titleMedium" style={styles.errorTitle}>{s.uploadFailed}</Text>
               <Text variant="bodyMedium" style={styles.errorText}>{statusText}</Text>
               <Button mode="contained" onPress={() => setStage('idle')} style={styles.button}>
-                Try Again
+                {s.uploadTryAgain}
               </Button>
             </>
           )}

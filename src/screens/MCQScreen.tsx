@@ -7,6 +7,8 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent, createAttempt, saveAnswer, completeAttempt } from '../services/storage';
 import { MCQQuestion } from '../services/api';
 import { useSessionStore } from '../store/sessionStore';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 import QuestionCard from '../components/QuestionCard';
 import ProgressBar from '../components/ProgressBar';
 
@@ -21,6 +23,8 @@ export default function MCQScreen({ route, navigation }: Props) {
   const [localAnswers, setLocalAnswers] = useState<
     { questionId: string; correct: boolean; userAnswer: string }[]
   >([]);
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     async function load() {
@@ -38,8 +42,7 @@ export default function MCQScreen({ route, navigation }: Props) {
         setAttemptId(aId);
         startQuiz('mcq', qs, aId);
       } catch (err: any) {
-        
-        Alert.alert('Error', 'Failed to load questions. Please go back and try again.');
+        Alert.alert('Error', s.mcqLoadError);
       } finally {
         setLoading(false);
       }
@@ -59,7 +62,6 @@ export default function MCQScreen({ route, navigation }: Props) {
       recordAnswer({ questionId, userAnswer: choice, isCorrect, timeSpentMs: 0 });
       setLocalAnswers((prev) => [...prev, { questionId, correct: isCorrect, userAnswer: choice }]);
     } catch (err: any) {
-      
       // Non-fatal: answer wasn't saved to DB, but allow quiz to continue
     }
   }
@@ -74,7 +76,6 @@ export default function MCQScreen({ route, navigation }: Props) {
         finishQuiz();
         navigation.replace('FillBlank', { sessionId });
       } catch (err: any) {
-        
         navigation.replace('FillBlank', { sessionId });
       }
     } else {
@@ -87,7 +88,7 @@ export default function MCQScreen({ route, navigation }: Props) {
   }
 
   if (!questions.length) {
-    return <View style={styles.center}><Text>No questions found.</Text></View>;
+    return <View style={styles.center}><Text>{s.mcqNoQuestions}</Text></View>;
   }
 
   const currentIndex = quiz?.currentIndex ?? 0;
@@ -96,7 +97,7 @@ export default function MCQScreen({ route, navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <ProgressBar current={currentIndex + 1} total={questions.length} label="Multiple Choice" />
+      <ProgressBar current={currentIndex + 1} total={questions.length} label={s.mcqProgressLabel} />
 
       {currentQuestion && (
         <QuestionCard

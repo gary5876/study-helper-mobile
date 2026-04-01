@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, StyleSheet, Modal } from 'react-native';
 import { Text, Button, Surface } from 'react-native-paper';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 interface Props {
   visible: boolean;
@@ -14,6 +16,9 @@ interface Props {
 export default function FeedbackModal({
   visible, isCorrect, message, correctAnswer, onNext, isLast,
 }: Props) {
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
+
   const bgColor = isCorrect ? '#e8f5e9' : '#ffebee';
   const accentColor = isCorrect ? '#4caf50' : '#e53935';
   const icon = isCorrect ? '✓' : '✗';
@@ -27,12 +32,12 @@ export default function FeedbackModal({
           </View>
 
           <Text variant="titleMedium" style={[styles.result, { color: accentColor }]}>
-            {isCorrect ? 'Correct!' : 'Not quite'}
+            {isCorrect ? s.feedbackCorrect : s.feedbackWrong}
           </Text>
 
           {!isCorrect && correctAnswer && (
             <View style={styles.correctAnswerBox}>
-              <Text variant="bodySmall" style={styles.correctLabel}>Correct answer:</Text>
+              <Text variant="bodySmall" style={styles.correctLabel}>{s.feedbackCorrectAnswer}</Text>
               <Text variant="bodyMedium" style={[styles.correctAnswer, { color: accentColor }]}>
                 {correctAnswer}
               </Text>
@@ -47,7 +52,7 @@ export default function FeedbackModal({
             style={[styles.button, { backgroundColor: accentColor }]}
             contentStyle={styles.buttonContent}
           >
-            {isLast ? 'See Results' : 'Next Question →'}
+            {isLast ? s.feedbackSeeResults : s.feedbackNextQuestion}
           </Button>
         </Surface>
       </View>

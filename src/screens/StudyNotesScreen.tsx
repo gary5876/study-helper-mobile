@@ -8,6 +8,8 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent } from '../services/storage';
 import { StudyNotes, KeyConcept } from '../services/api';
 import { useSessionStore } from '../store/sessionStore';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 import ConceptHighlight from '../components/ConceptHighlight';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'StudyNotes'>;
@@ -19,6 +21,8 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
   const [selectedConcept, setSelectedConcept] = useState<KeyConcept | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
   const { studyContent, setSession } = useSessionStore();
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     async function load() {
@@ -48,7 +52,7 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
   if (!notes) {
     return (
       <View style={styles.center}>
-        <Text>Could not load study notes.</Text>
+        <Text>{s.studyNotesLoadError}</Text>
       </View>
     );
   }
@@ -73,7 +77,7 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
     <>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Key Concepts */}
-        <Text variant="titleLarge" style={styles.sectionHeader}>Key Concepts</Text>
+        <Text variant="titleLarge" style={styles.sectionHeader}>{s.studyNotesKeyConcepts}</Text>
         <View style={styles.conceptGrid}>
           {notes.key_concepts.map((concept) => (
             <TouchableOpacity
@@ -95,7 +99,7 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
         <Divider style={styles.divider} />
 
         {/* Sections */}
-        <Text variant="titleLarge" style={styles.sectionHeader}>Summaries</Text>
+        <Text variant="titleLarge" style={styles.sectionHeader}>{s.studyNotesSummaries}</Text>
         {notes.sections.map((section, index) => (
           <Card key={index} style={styles.sectionCard}>
             <TouchableOpacity onPress={() => toggleSection(index)} activeOpacity={0.8}>
@@ -125,7 +129,7 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
         <Divider style={styles.divider} />
 
         {/* Glossary */}
-        <Text variant="titleLarge" style={styles.sectionHeader}>Glossary</Text>
+        <Text variant="titleLarge" style={styles.sectionHeader}>{s.studyNotesGlossary}</Text>
         {notes.glossary.map((entry, index) => (
           <View key={index} style={styles.glossaryRow}>
             <Text variant="bodyMedium" style={styles.glossaryTerm}>{entry.term}</Text>
@@ -133,7 +137,6 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
           </View>
         ))}
 
-        {/* Spacer for FAB */}
         <View style={{ height: 80 }} />
       </ScrollView>
 
@@ -145,7 +148,7 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
           contentStyle={styles.startButtonContent}
           icon="pencil"
         >
-          I'm Ready to Test
+          {s.studyNotesStartTest}
         </Button>
       </View>
 

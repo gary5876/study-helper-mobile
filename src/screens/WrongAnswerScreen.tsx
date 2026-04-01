@@ -6,8 +6,10 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { getWrongAnswers, scheduleReview } from '../services/storage';
 import { MCQQuestion, FillQuestion } from '../services/api';
 import { useSessionStore } from '../store/sessionStore';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 import {
-  actionToQuality, computeNextState, INITIAL_SM2_STATE, describeInterval,
+  actionToQuality, computeNextState, INITIAL_SM2_STATE,
 } from '../services/scheduler';
 import { AnswerRow } from '../db/schema';
 
@@ -27,6 +29,8 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { studyContent } = useSessionStore();
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     async function load() {
@@ -60,7 +64,6 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
     if (!studyContent) return;
     setSaving(true);
 
-    // Schedule spaced repetition for each reviewed item
     for (const item of items) {
       if (!item.action || !item.question) continue;
       const quality = actionToQuality(item.action);
@@ -79,7 +82,6 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
       });
     }
 
-    // Items marked "still confused" go to retry
     const retryIds = items
       .filter((i) => i.action === 'still_confused')
       .map((i) => i.question?.id)
@@ -95,7 +97,7 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
   }
 
   function getQuestionText(item: WrongItem): string {
-    if (!item.question) return 'Question not found';
+    if (!item.question) return '—';
     if ('options' in item.question) return item.question.question;
     return item.question.sentence_with_blank;
   }
@@ -115,16 +117,27 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
     return '';
   }
 
+  const actionLabels: Record<ReviewAction, string> = {
+    got_it: s.wrongGotIt,
+    got_it_with_hint: s.wrongNeedsHint,
+    still_confused: s.wrongStillConfused,
+  };
+  const actionColors: Record<ReviewAction, string> = {
+    got_it: '#4caf50',
+    got_it_with_hint: '#ff9800',
+    still_confused: '#e53935',
+  };
+
   if (loading) {
-    return <View style={styles.center}><Text>Loading…</Text></View>;
+    return <View style={styles.center}><Text>{s.wrongLoading}</Text></View>;
   }
 
   if (items.length === 0) {
     return (
       <View style={styles.center}>
-        <Text variant="titleMedium">No mistakes — great work!</Text>
+        <Text variant="titleMedium">{s.wrongNoMistakes}</Text>
         <Button mode="contained" onPress={() => navigation.navigate('Home')} style={{ marginTop: 16 }}>
-          Back to Home
+          {s.wrongBackHome}
         </Button>
       </View>
     );
@@ -135,37 +148,30 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="bodyMedium" style={styles.intro}>
-          Review each mistake and mark how well you understand it now.
-        </Text>
+        <Text variant="bodyMedium" style={styles.intro}>{s.wrongIntro}</Text>
 
         {items.map((item, index) => (
           <Card key={index} style={styles.card}>
             <Card.Content>
-              {/* Question */}
               <Text variant="bodyMedium" style={styles.questionText}>
                 {getQuestionText(item)}
               </Text>
 
               <Divider style={styles.divider} />
 
-              {/* User's answer */}
-              <Text variant="bodySmall" style={styles.wrongLabel}>Your answer:</Text>
+              <Text variant="bodySmall" style={styles.wrongLabel}>{s.wrongYourAnswer}</Text>
               <Text variant="bodySmall" style={styles.wrongAnswer}>{item.answer.user_answer}</Text>
 
-              {/* Correct answer */}
-              <Text variant="bodySmall" style={styles.correctLabel}>Correct answer:</Text>
+              <Text variant="bodySmall" style={styles.correctLabel}>{s.wrongCorrectAnswer}</Text>
               <Text variant="bodySmall" style={styles.correctAnswer}>{getCorrectAnswer(item)}</Text>
 
-              {/* Explanation */}
               {!!getExplanation(item) && (
                 <>
-                  <Text variant="bodySmall" style={styles.explLabel}>Why:</Text>
+                  <Text variant="bodySmall" style={styles.explLabel}>{s.wrongWhy}</Text>
                   <Text variant="bodySmall" style={styles.explanation}>{getExplanation(item)}</Text>
                 </>
               )}
 
-              {/* Related concept button */}
               {item.question && (
                 <Button
                   mode="text"
@@ -178,36 +184,25 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
                   }
                   style={styles.conceptBtn}
                 >
-                  View Related Concept
+                  {s.wrongViewConcept}
                 </Button>
               )}
 
               <Divider style={styles.divider} />
 
-              {/* Action buttons */}
-              <Text variant="bodySmall" style={styles.rateLabel}>How do you feel now?</Text>
+              <Text variant="bodySmall" style={styles.rateLabel}>{s.wrongHowDoYouFeel}</Text>
               <View style={styles.actionRow}>
                 {(['got_it', 'got_it_with_hint', 'still_confused'] as ReviewAction[]).map((action) => {
-                  const labels: Record<ReviewAction, string> = {
-                    got_it: 'Got It ✓',
-                    got_it_with_hint: 'Needs Hint',
-                    still_confused: 'Still Confused',
-                  };
-                  const colors: Record<ReviewAction, string> = {
-                    got_it: '#4caf50',
-                    got_it_with_hint: '#ff9800',
-                    still_confused: '#e53935',
-                  };
                   const selected = item.action === action;
                   return (
                     <Chip
                       key={action}
                       selected={selected}
                       onPress={() => setAction(index, action)}
-                      style={[styles.actionChip, selected && { backgroundColor: colors[action] }]}
+                      style={[styles.actionChip, selected && { backgroundColor: actionColors[action] }]}
                       textStyle={{ color: selected ? '#fff' : '#333', fontSize: 12 }}
                     >
-                      {labels[action]}
+                      {actionLabels[action]}
                     </Chip>
                   );
                 })}
@@ -228,7 +223,7 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
           style={styles.doneBtn}
           icon="check"
         >
-          {items.some((i) => i.action === 'still_confused') ? 'Retry Confused Items' : 'All Done!'}
+          {items.some((i) => i.action === 'still_confused') ? s.wrongRetryConfused : s.wrongAllDone}
         </Button>
       </View>
     </View>

@@ -9,6 +9,8 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent, createAttempt, saveAnswer, completeAttempt } from '../services/storage';
 import { FillQuestion } from '../services/api';
 import { useSessionStore } from '../store/sessionStore';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 import ProgressBar from '../components/ProgressBar';
 import FeedbackModal from '../components/FeedbackModal';
 import { fuzzyMatch } from '../services/scheduler';
@@ -35,6 +37,8 @@ export default function FillBlankScreen({ route, navigation }: Props) {
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<{ correct: boolean }[]>([]);
   const { recordAnswer } = useSessionStore();
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     async function load() {
@@ -46,8 +50,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
         const aId = await createAttempt({ session_id: sessionId, attempt_type: 'fill' });
         setAttemptId(aId);
       } catch (err: any) {
-        
-        Alert.alert('Error', 'Failed to load questions. Please go back and try again.');
+        Alert.alert('Error', s.fillLoadError);
       } finally {
         setLoading(false);
       }
@@ -77,7 +80,6 @@ export default function FillBlankScreen({ route, navigation }: Props) {
       });
       recordAnswer({ questionId: current.id, userAnswer: userInput.trim(), isCorrect, timeSpentMs: 0 });
     } catch (err: any) {
-      
       // Non-fatal: continue quiz even if DB write fails
     }
     setAnswers((prev) => [...prev, { correct: isCorrect }]);
@@ -87,8 +89,8 @@ export default function FillBlankScreen({ route, navigation }: Props) {
       isCorrect,
       correctAnswer: current.answer,
       explanation: isCorrect
-        ? 'Correct! Well done.'
-        : `The correct answer is: "${current.answer}"`,
+        ? s.fillCorrect
+        : `${s.fillWrongPrefix}"${current.answer}"`,
     });
   }
 
@@ -105,7 +107,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
         const pct = total > 0 ? (correct / total) * 100 : 0;
         await completeAttempt(attemptId, pct);
       } catch (err: any) {
-        
+        // ignore
       } finally {
         navigation.replace('Score', { attemptId, sessionId });
       }
@@ -118,7 +120,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
     return <View style={styles.center}><ActivityIndicator size="large" color="#6c63ff" /></View>;
   }
   if (!questions.length || !current) {
-    return <View style={styles.center}><Text>No fill questions found.</Text></View>;
+    return <View style={styles.center}><Text>{s.fillNoQuestions}</Text></View>;
   }
 
   const parts = current.sentence_with_blank.split('___');
@@ -128,7 +130,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ProgressBar current={currentIndex + 1} total={questions.length} label="Fill in the Blank" />
+      <ProgressBar current={currentIndex + 1} total={questions.length} label={s.fillProgressLabel} />
 
       <View style={styles.content}>
         <Card style={styles.card}>
@@ -140,14 +142,16 @@ export default function FillBlankScreen({ route, navigation }: Props) {
             </Text>
 
             {showHint && current.hint ? (
-              <Text variant="bodySmall" style={styles.hint}>💡 Hint: {current.hint}</Text>
+              <Text variant="bodySmall" style={styles.hint}>
+                {s.fillHintPrefix}{current.hint}
+              </Text>
             ) : null}
 
             <TextInput
               style={styles.input}
               value={userInput}
               onChangeText={setUserInput}
-              placeholder="Type your answer…"
+              placeholder={s.fillPlaceholder}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
@@ -156,7 +160,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
 
             <View style={styles.actions}>
               {!showHint && current.hint ? (
-                <Button mode="text" onPress={() => setShowHint(true)}>Show Hint</Button>
+                <Button mode="text" onPress={() => setShowHint(true)}>{s.fillShowHint}</Button>
               ) : <View />}
               <Button
                 mode="contained"
@@ -164,7 +168,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
                 disabled={!userInput.trim()}
                 style={styles.submitBtn}
               >
-                Submit
+                {s.fillSubmit}
               </Button>
             </View>
           </Card.Content>

@@ -3,6 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import { hasPlanSelected, getPlan, hasApiKey } from '../services/api';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 // Screens
 import PlanSelectionScreen from '../screens/PlanSelectionScreen';
@@ -33,6 +35,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState<'PlanSelection' | 'ApiKeySetup' | 'Home' | null>(null);
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     (async () => {
@@ -42,7 +46,6 @@ export default function AppNavigator() {
         return;
       }
       const plan = await getPlan();
-      // non-free plans require an API key
       if (plan !== 'free') {
         const hasKey = await hasApiKey();
         setInitialRoute(hasKey ? 'Home' : 'ApiKeySetup');
@@ -73,41 +76,25 @@ export default function AppNavigator() {
         <Stack.Screen
           name="PlanSelection"
           component={PlanSelectionScreen}
-          options={{ title: 'Get Started', headerShown: false }}
+          options={{ title: s.navGetStarted, headerShown: false }}
         />
         <Stack.Screen
           name="ApiKeySetup"
           component={ApiKeySetupScreen}
-          options={{ title: 'Setup', headerShown: false }}
+          options={{ title: s.navSetup, headerShown: false }}
         />
         <Stack.Screen
           name="Home"
           component={HomeScreen}
           options={{ title: 'Fundamentals', headerShown: false }}
         />
-        <Stack.Screen name="Upload" component={UploadScreen} options={{ title: 'New Session' }} />
-        <Stack.Screen
-          name="StudyNotes"
-          component={StudyNotesScreen}
-          options={{ title: 'Study Notes' }}
-        />
-        <Stack.Screen name="MCQ" component={MCQScreen} options={{ title: 'Multiple Choice' }} />
-        <Stack.Screen
-          name="FillBlank"
-          component={FillBlankScreen}
-          options={{ title: 'Fill in the Blank' }}
-        />
-        <Stack.Screen name="Score" component={ScoreScreen} options={{ title: 'Results' }} />
-        <Stack.Screen
-          name="WrongAnswer"
-          component={WrongAnswerScreen}
-          options={{ title: 'Review Mistakes' }}
-        />
-        <Stack.Screen
-          name="ReviewConcept"
-          component={ReviewConceptScreen}
-          options={{ title: 'Concept Review' }}
-        />
+        <Stack.Screen name="Upload" component={UploadScreen} options={{ title: s.navNewSession }} />
+        <Stack.Screen name="StudyNotes" component={StudyNotesScreen} options={{ title: s.navStudyNotes }} />
+        <Stack.Screen name="MCQ" component={MCQScreen} options={{ title: s.navMCQ }} />
+        <Stack.Screen name="FillBlank" component={FillBlankScreen} options={{ title: s.navFillBlank }} />
+        <Stack.Screen name="Score" component={ScoreScreen} options={{ title: s.navResults }} />
+        <Stack.Screen name="WrongAnswer" component={WrongAnswerScreen} options={{ title: s.navReviewMistakes }} />
+        <Stack.Screen name="ReviewConcept" component={ReviewConceptScreen} options={{ title: s.navConceptReview }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

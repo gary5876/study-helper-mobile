@@ -9,6 +9,8 @@ import {
 import { MCQQuestion, FillQuestion, StudyContent } from '../services/api';
 import { scoreToGrade } from '../services/scheduler';
 import { useSessionStore } from '../store/sessionStore';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Score'>;
 
@@ -26,6 +28,8 @@ export default function ScoreScreen({ route, navigation }: Props) {
   const [totalCount, setTotalCount] = useState(0);
   const [weakAreas, setWeakAreas] = useState<WeakArea[]>([]);
   const { studyContent } = useSessionStore();
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     async function load() {
@@ -34,7 +38,6 @@ export default function ScoreScreen({ route, navigation }: Props) {
       setTotalCorrect(correct);
       setTotalCount(answers.length);
 
-      // Compute weak areas
       if (studyContent) {
         const allQuestions = [
           ...studyContent.mcq_questions,
@@ -65,7 +68,7 @@ export default function ScoreScreen({ route, navigation }: Props) {
   }, [attemptId]);
 
   if (loading) {
-    return <View style={styles.center}><Text>Loading results…</Text></View>;
+    return <View style={styles.center}><Text>{s.scoreLoading}</Text></View>;
   }
 
   const pct = totalCount > 0 ? (totalCorrect / totalCount) * 100 : 0;
@@ -84,7 +87,7 @@ export default function ScoreScreen({ route, navigation }: Props) {
             {Math.round(pct)}%
           </Text>
           <Text variant="bodyLarge" style={styles.scoreDetail}>
-            {totalCorrect} / {totalCount} correct
+            {totalCorrect} / {totalCount} {s.scoreCorrect}
           </Text>
           <PaperProgress
             progress={pct / 100}
@@ -97,13 +100,13 @@ export default function ScoreScreen({ route, navigation }: Props) {
       {/* Weak areas */}
       {weakAreas.length > 0 && (
         <>
-          <Text variant="titleMedium" style={styles.sectionTitle}>Areas to Strengthen</Text>
+          <Text variant="titleMedium" style={styles.sectionTitle}>{s.scoreWeakAreas}</Text>
           {weakAreas.map((area) => (
             <Card key={area.conceptId} style={styles.weakCard}>
               <Card.Content>
                 <Text variant="bodyMedium" style={styles.weakTerm}>{area.term}</Text>
                 <Text variant="bodySmall" style={styles.weakDetail}>
-                  {area.wrongCount}/{area.totalCount} questions wrong
+                  {area.wrongCount}/{area.totalCount} {s.scoreQuestionsWrong}
                 </Text>
               </Card.Content>
             </Card>
@@ -120,7 +123,7 @@ export default function ScoreScreen({ route, navigation }: Props) {
           style={[styles.btn, { backgroundColor: '#e53935' }]}
           icon="close-circle"
         >
-          Review Mistakes
+          {s.scoreReviewMistakes}
         </Button>
         <Button
           mode="outlined"
@@ -128,14 +131,14 @@ export default function ScoreScreen({ route, navigation }: Props) {
           style={styles.btn}
           icon="book-open-variant"
         >
-          Study Notes Again
+          {s.scoreStudyNotesAgain}
         </Button>
         <Button
           mode="text"
           onPress={() => navigation.navigate('Home')}
           style={styles.btn}
         >
-          Done
+          {s.scoreDone}
         </Button>
       </View>
     </ScrollView>

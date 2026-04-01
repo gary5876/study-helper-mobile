@@ -5,6 +5,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent } from '../services/storage';
 import { KeyConcept, StudyNotes } from '../services/api';
+import { useLanguageStore } from '../store/languageStore';
+import { STRINGS } from '../i18n/strings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewConcept'>;
 
@@ -13,6 +15,8 @@ export default function ReviewConceptScreen({ route, navigation }: Props) {
   const [concept, setConcept] = useState<KeyConcept | null>(null);
   const [notes, setNotes] = useState<StudyNotes | null>(null);
   const [loading, setLoading] = useState(true);
+  const { lang } = useLanguageStore();
+  const s = STRINGS[lang];
 
   useEffect(() => {
     async function load() {
@@ -28,22 +32,21 @@ export default function ReviewConceptScreen({ route, navigation }: Props) {
     load();
   }, [conceptId, sessionId]);
 
-  if (loading) return <View style={styles.center}><Text>Loading…</Text></View>;
+  if (loading) return <View style={styles.center}><Text>{s.reviewLoading}</Text></View>;
 
   if (!concept) {
     return (
       <View style={styles.center}>
-        <Text>Concept not found.</Text>
-        <Button onPress={() => navigation.goBack()}>Go Back</Button>
+        <Text>{s.reviewConceptNotFound}</Text>
+        <Button onPress={() => navigation.goBack()}>{s.reviewGoBack}</Button>
       </View>
     );
   }
 
-  // Find sections that mention this concept
-  const relatedSections = notes?.sections.filter((s) =>
-    s.title.toLowerCase().includes(concept.term.toLowerCase()) ||
-    s.summary.toLowerCase().includes(concept.term.toLowerCase()) ||
-    s.bullets.some((b) => b.toLowerCase().includes(concept.term.toLowerCase()))
+  const relatedSections = notes?.sections.filter((sec) =>
+    sec.title.toLowerCase().includes(concept.term.toLowerCase()) ||
+    sec.summary.toLowerCase().includes(concept.term.toLowerCase()) ||
+    sec.bullets.some((b) => b.toLowerCase().includes(concept.term.toLowerCase()))
   ) ?? [];
 
   const importanceColor = (imp: KeyConcept['importance']) => {
@@ -65,7 +68,7 @@ export default function ReviewConceptScreen({ route, navigation }: Props) {
               style={[styles.importanceChip, { backgroundColor: importanceColor(concept.importance) }]}
               textStyle={{ color: '#fff', fontSize: 11 }}
             >
-              {concept.importance} importance
+              {concept.importance}{s.reviewImportanceSuffix}
             </Chip>
           </View>
           <Text variant="bodyLarge" style={styles.definition}>{concept.definition}</Text>
@@ -75,7 +78,7 @@ export default function ReviewConceptScreen({ route, navigation }: Props) {
       {/* Related Sections */}
       {relatedSections.length > 0 && (
         <>
-          <Text variant="titleMedium" style={styles.sectionHeader}>Related Sections</Text>
+          <Text variant="titleMedium" style={styles.sectionHeader}>{s.reviewRelatedSections}</Text>
           {relatedSections.map((section, index) => (
             <Card key={index} style={styles.sectionCard}>
               <Card.Content>
@@ -94,7 +97,7 @@ export default function ReviewConceptScreen({ route, navigation }: Props) {
       {/* Glossary entry if exists */}
       {notes?.glossary.find((g) => g.term.toLowerCase() === concept.term.toLowerCase()) && (
         <>
-          <Text variant="titleMedium" style={styles.sectionHeader}>Glossary</Text>
+          <Text variant="titleMedium" style={styles.sectionHeader}>{s.reviewGlossary}</Text>
           <Card style={styles.sectionCard}>
             <Card.Content>
               <Text variant="bodyMedium" style={styles.glossaryDef}>
@@ -111,7 +114,7 @@ export default function ReviewConceptScreen({ route, navigation }: Props) {
         style={styles.backBtn}
         icon="arrow-left"
       >
-        Back to Review
+        {s.reviewBackToReview}
       </Button>
 
       <View style={{ height: 32 }} />
