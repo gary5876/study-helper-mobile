@@ -5,14 +5,14 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-03-31)
+## 현재 상태 (2026-04-02)
 
 ### 완성된 화면 및 기능
 
-- [x] **PlanSelectionScreen** — 최초 온보딩: 무료(Gemini) / Anthropic / OpenAI GPT / TimelyGPT 4개 플랜 선택
-- [x] **ApiKeySetupScreen** — 플랜별 동적 UI (제목·placeholder·검증 규칙·발급 링크 자동 변경)
+- [x] **PlanSelectionScreen** — TimelyGPT 추천 최상단 배치 + 추천 배지, 무료 플랜, Anthropic/OpenAI 고급 옵션 토글로 접기
+- [x] **ApiKeySetupScreen** — 플랜별 동적 UI (제목·placeholder·검증 규칙·발급 링크 자동 변경) + 모델 선택 칩 UI + TimelyGPT 단계별 발급 안내 (설정→연동 키 관리→재발급→복사) + 크레딧 소모 안내
 - [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB, 플랜 변경 설정 아이콘, 한/EN 언어 토글
-- [x] **UploadScreen** — PDF 선택 + 업로드 + 생성 진행률 실시간 표시
+- [x] **UploadScreen** — 최초 업로드 전 동의 모달(1회, PDF 외부 전송·문제은행 공유·API 키 처리 고지, SQLite 동의 기록) + PDF 선택 + 업로드 + 생성 진행률 실시간 표시
 - [x] **StudyNotesScreen** — 핵심 개념 칩 · 섹션 요약 · 용어집
 - [x] **MCQScreen** — 4지선다 퀴즈, 즉각 피드백, 개념 설명
 - [x] **FillBlankScreen** — 빈칸 채우기, 퍼지 매칭 (Levenshtein 80%)
@@ -21,6 +21,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 - [x] **ReviewConceptScreen** — 개념 전체 정의 + 관련 섹션
 - [x] SQLite 로컬 저장 — 생성 후 100% 오프라인 동작
 - [x] 한국어 기본 UI + 한/EN 전환 (`src/i18n/strings.ts` + `languageStore`, SecureStore 언어 유지)
+- [x] 프로바이더별 AI 모델 선택 (`modelStore`, SecureStore 영속화, `options.model`로 백엔드 전달)
 - [x] Jest 단위 테스트 27개
 - [x] Maestro E2E 테스트 3개 시나리오
 
@@ -42,10 +43,16 @@ HomeScreen 헤더의 설정(⚙) 아이콘으로 언제든 재진입 가능.
 ```
 진입 조건 A: 플랜 미선택 (hasPlanSelected() === false) — 초기 온보딩
 진입 조건 B: HomeScreen 헤더 설정 아이콘 탭 — 플랜 변경
+
+화면 구성:
+  ① TimelyGPT (추천 배지 + 보라색 강조 테두리) — 최상단
+  ② 무료 플랜
+  ③ "직접 API 키 사용하기" 토글 → Anthropic / OpenAI 카드 펼침
+
+  ├─▶ TimelyGPT 선택     → savePlan('timely') → ApiKeySetupScreen
   ├─▶ 무료 플랜 선택      → savePlan('free')   → HomeScreen
   ├─▶ Anthropic 선택     → savePlan('paid')   → ApiKeySetupScreen
-  ├─▶ OpenAI GPT 선택    → savePlan('gpt')    → ApiKeySetupScreen
-  └─▶ TimelyGPT 선택     → savePlan('timely') → ApiKeySetupScreen
+  └─▶ OpenAI GPT 선택    → savePlan('gpt')    → ApiKeySetupScreen
 
 ※ 플랜 변경 시 navigation.reset으로 스택 초기화 (뒤로가기 꼬임 방지)
 ```
@@ -59,7 +66,10 @@ HomeScreen 헤더의 설정(⚙) 아이콘으로 언제든 재진입 가능.
 진입 조건: 비무료 플랜 선택 && SecureStore에 API 키 없음
   ├─▶ paid   → Anthropic API 키 입력 (sk-ant-...)
   ├─▶ gpt    → OpenAI API 키 입력 (sk-...)
-  ├─▶ timely → TimelyGPT API 키 입력 (timelygpt.co.kr 발급)
+  └─▶ timely → TimelyGPT API 키 입력
+               단계별 발급 안내 박스 표시:
+               ① 설정 탭 이동 ② 연동 키 관리 선택 ③ 재발급 ④ 복사 후 붙여넣기
+               크레딧 소모 안내: "학습 콘텐츠 생성 시 본인 계정의 크레딧이 사용됩니다."
   └─▶ 저장 → HomeScreen
 ```
 
@@ -79,6 +89,13 @@ HomeScreen 헤더의 설정(⚙) 아이콘으로 언제든 재진입 가능.
 PDF 선택 → 업로드 → 생성 → StudyNotes.
 
 ```
+  └─▶ 동의 확인 (최초 1회):
+        SQLite user_settings 'upload_consent_given' 조회
+        미동의 시 바텀 시트 모달 표시:
+          - PDF 내용이 외부 AI 서비스로 전송됨
+          - 생성된 콘텐츠가 문제은행에 저장되어 다른 사용자와 공유 가능
+          - API 키는 서버로 전송되나 저장되지 않음
+        동의 → setSetting('upload_consent_given', '1') 저장 후 진행
   └─▶ expo-document-picker로 PDF 선택
   └─▶ getPlan() 로드 → plan 인식
   └─▶ POST /upload (plan 필드 포함 · 유료 플랜만 X-API-Key 헤더)
@@ -220,7 +237,7 @@ quality < 3 (망각):
 | `attempts` | id, session_id, quiz_type, score_pct, completed_at | 퀴즈 시도 기록 |
 | `answers` | attempt_id, question_id, user_answer, is_correct, time_spent_ms | 문제별 답변 |
 | `review_schedule` | concept_id, interval, ease_factor, repetitions, due_date | SM-2 복습 스케줄 |
-| `user_settings` | key, value | API 키 상태, 설정값 (키/값 쌍) |
+| `user_settings` | key, value | 앱 설정값 (키/값 쌍) — `upload_consent_given`: 업로드 동의 완료 여부 |
 
 ---
 
