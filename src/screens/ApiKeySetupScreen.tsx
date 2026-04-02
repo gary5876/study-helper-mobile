@@ -22,7 +22,7 @@ interface PlanMeta {
 const PLAN_META: Record<Exclude<Plan, 'free'>, PlanMeta> = {
   paid: {
     title: 'Anthropic API 키 입력',
-    description: '키는 기기 내에만 안전하게 저장됩니다. 서버로 전송되지 않습니다.',
+    description: '키는 기기에 저장되며, 학습 자료 생성 요청 시 서버로 전송됩니다. 서버는 키를 저장하지 않습니다.',
     placeholder: 'sk-ant-api03-...',
     link: 'console.anthropic.com에서 발급',
     validate: (k) => k.startsWith('sk-ant-') && k.length > 20,
@@ -30,7 +30,7 @@ const PLAN_META: Record<Exclude<Plan, 'free'>, PlanMeta> = {
   },
   gpt: {
     title: 'OpenAI API 키 입력',
-    description: '키는 기기 내에만 안전하게 저장됩니다. 서버로 전송되지 않습니다.',
+    description: '키는 기기에 저장되며, 학습 자료 생성 요청 시 서버로 전송됩니다. 서버는 키를 저장하지 않습니다.',
     placeholder: 'sk-...',
     link: 'platform.openai.com에서 발급',
     validate: (k) => k.startsWith('sk-') && k.length > 20,
@@ -38,9 +38,9 @@ const PLAN_META: Record<Exclude<Plan, 'free'>, PlanMeta> = {
   },
   timely: {
     title: 'TimelyGPT API 키 입력',
-    description: '키는 기기 내에만 안전하게 저장됩니다. 서버로 전송되지 않습니다.',
+    description: '키는 기기에 저장되며, 학습 자료 생성 요청 시 서버로 전송됩니다. 서버는 키를 저장하지 않습니다.',
     placeholder: 'tgpt-sk-...',
-    link: 'timelygpt.co.kr에서 발급',
+    link: 'timelygpt.co.kr에서 크레딧 및 키 관리',
     validate: (k) => k.length > 10,
     validationMsg: 'TimelyGPT API 키를 올바르게 입력해 주세요.',
   },
@@ -102,6 +102,19 @@ export default function ApiKeySetupScreen({ navigation }: Props) {
             <Text variant="bodySmall" style={styles.description}>
               {meta.description}
             </Text>
+
+            {plan === 'timely' && (
+              <View style={styles.guideBox}>
+                <Text variant="labelMedium" style={styles.guideTitle}>TimelyGPT 앱에서 API 키 발급하기</Text>
+                <Text variant="bodySmall" style={styles.guideStep}>① 설정 탭으로 이동</Text>
+                <Text variant="bodySmall" style={styles.guideStep}>② 연동 키 관리 선택</Text>
+                <Text variant="bodySmall" style={styles.guideStep}>③ 재발급 버튼 탭</Text>
+                <Text variant="bodySmall" style={styles.guideStep}>④ 복사 후 아래에 붙여넣기</Text>
+                <Text variant="bodySmall" style={styles.guideNote}>
+                  학습 콘텐츠 생성 시 본인 계정의 크레딧이 사용됩니다.
+                </Text>
+              </View>
+            )}
 
             <TextInput
               label="API Key"
@@ -178,4 +191,14 @@ const styles = StyleSheet.create({
   button: { marginTop: 8, borderRadius: 8 },
   buttonContent: { paddingVertical: 6 },
   footer: { color: '#666', textAlign: 'center', marginTop: 24 },
+  guideBox: {
+    backgroundColor: '#ede9ff',
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+    gap: 4,
+  },
+  guideTitle: { color: '#6c63ff', fontWeight: '700', marginBottom: 6 },
+  guideStep: { color: '#444', lineHeight: 22 },
+  guideNote: { color: '#6c63ff', marginTop: 8, fontWeight: '500' },
 });
