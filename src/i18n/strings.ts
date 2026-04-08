@@ -104,6 +104,18 @@ export const STRINGS = {
     // ConceptHighlight
     conceptClose: '닫기',
 
+    // Subject management (HomeScreen + UploadScreen)
+    subjectAll: '전체',
+    subjectUncategorized: '미분류',
+    subjectAdd: '과목 추가',
+    subjectNamePlaceholder: '과목명 입력...',
+    subjectCreate: '만들기',
+    subjectCancel: '취소',
+    subjectSelectStep: '어떤 과목인가요?',
+    subjectSelectDesc: '과목을 선택하거나 새로 만드세요.',
+    subjectNewLabel: '+ 새 과목',
+    uploadStartBtn: '생성 시작',
+
     // ModelSelection (ApiKeySetupScreen)
     modelSelectLabel: '모델 선택',
     modelSelectDefault: '(기본값)',
@@ -210,6 +222,18 @@ export const STRINGS = {
 
     // ConceptHighlight
     conceptClose: 'Close',
+
+    // Subject management (HomeScreen + UploadScreen)
+    subjectAll: 'All',
+    subjectUncategorized: 'Unclassified',
+    subjectAdd: 'Add Subject',
+    subjectNamePlaceholder: 'Subject name...',
+    subjectCreate: 'Create',
+    subjectCancel: 'Cancel',
+    subjectSelectStep: 'Which subject?',
+    subjectSelectDesc: 'Select a subject or create a new one.',
+    subjectNewLabel: '+ New Subject',
+    uploadStartBtn: 'Start',
 
     // ModelSelection (ApiKeySetupScreen)
     modelSelectLabel: 'Select Model',

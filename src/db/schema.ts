@@ -20,6 +20,14 @@ export async function initDatabase(): Promise<void> {
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
 
+    -- Subject categories (must come before sessions for FK reference)
+    CREATE TABLE IF NOT EXISTS subjects (
+      id         TEXT PRIMARY KEY,
+      name       TEXT NOT NULL UNIQUE,
+      color      TEXT NOT NULL DEFAULT '#6c63ff',
+      created_at INTEGER NOT NULL
+    );
+
     -- Core session records
     CREATE TABLE IF NOT EXISTS sessions (
       id            TEXT PRIMARY KEY,
@@ -28,7 +36,8 @@ export async function initDatabase(): Promise<void> {
       page_count    INTEGER DEFAULT 0,
       word_count    INTEGER DEFAULT 0,
       status        TEXT DEFAULT 'pending',
-      last_accessed INTEGER
+      last_accessed INTEGER,
+      subject_id    TEXT REFERENCES subjects(id)
     );
 
     -- Generated study content (JSON blobs for flexibility)
@@ -80,11 +89,44 @@ export async function initDatabase(): Promise<void> {
       value TEXT NOT NULL
     );
   `);
+
+  await runMigrations(database);
+}
+
+async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
+  const row = await database.getFirstAsync<{ value: string }>(
+    `SELECT value FROM user_settings WHERE key = 'db_version'`
+  );
+  const currentVersion = row ? parseInt(row.value, 10) : 1;
+
+  if (currentVersion < 2) {
+    // v2: subjects table + subject_id column on sessions.
+    // subjects table is already created above with IF NOT EXISTS.
+    // For existing installs, add subject_id column to sessions.
+    try {
+      await database.execAsync(
+        `ALTER TABLE sessions ADD COLUMN subject_id TEXT REFERENCES subjects(id);`
+      );
+    } catch (_) {
+      // Column already exists on fresh installs (created in the main block) — safe to ignore.
+    }
+    await database.runAsync(
+      `INSERT OR REPLACE INTO user_settings (key, value) VALUES ('db_version', '2')`,
+      []
+    );
+  }
 }
 
 // ─────────────────────────────────────────
 // TypeScript types (mirror DB schema)
 // ─────────────────────────────────────────
+
+export interface SubjectRow {
+  id: string;
+  name: string;
+  color: string;
+  created_at: number;
+}
 
 export interface SessionRow {
   id: string;
@@ -94,6 +136,7 @@ export interface SessionRow {
   word_count: number;
   status: 'pending' | 'ready' | 'failed';
   last_accessed: number | null;
+  subject_id: string | null;
 }
 
 export interface StudyContentRow {

@@ -5,6 +5,7 @@
 import * as Crypto from 'expo-crypto';
 import {
   getDb,
+  SubjectRow,
   SessionRow,
   StudyContentRow,
   AttemptRow,
@@ -12,10 +13,46 @@ import {
   ReviewScheduleRow,
 } from '../db/schema';
 
-export type { SessionRow, StudyContentRow, AttemptRow, AnswerRow, ReviewScheduleRow };
+export type { SubjectRow, SessionRow, StudyContentRow, AttemptRow, AnswerRow, ReviewScheduleRow };
 
 function uuid(): string {
   return Crypto.randomUUID();
+}
+
+// ─────────────────────────────────────────
+// Subjects
+// ─────────────────────────────────────────
+
+const SUBJECT_COLORS = [
+  '#6c63ff', '#f50057', '#43a047', '#fb8c00',
+  '#039be5', '#8e24aa', '#e53935', '#00897b',
+];
+
+export async function createSubject(name: string): Promise<SubjectRow> {
+  const db = getDb();
+  const existing = await getAllSubjects();
+  const color = SUBJECT_COLORS[existing.length % SUBJECT_COLORS.length];
+  const id = uuid();
+  const created_at = Date.now();
+  await db.runAsync(
+    `INSERT INTO subjects (id, name, color, created_at) VALUES (?, ?, ?, ?)`,
+    [id, name.trim(), color, created_at]
+  );
+  return { id, name: name.trim(), color, created_at };
+}
+
+export async function getAllSubjects(): Promise<SubjectRow[]> {
+  const db = getDb();
+  return db.getAllAsync<SubjectRow>(
+    `SELECT * FROM subjects ORDER BY created_at ASC`
+  );
+}
+
+export async function deleteSubject(id: string): Promise<void> {
+  const db = getDb();
+  // Detach sessions before deleting to avoid FK violation
+  await db.runAsync(`UPDATE sessions SET subject_id = NULL WHERE subject_id = ?`, [id]);
+  await db.runAsync(`DELETE FROM subjects WHERE id = ?`, [id]);
 }
 
 // ─────────────────────────────────────────
@@ -27,12 +64,21 @@ export async function createSession(params: {
   pdf_name: string;
   page_count: number;
   word_count: number;
+  subject_id?: string | null;
 }): Promise<void> {
   const db = getDb();
   await db.runAsync(
-    `INSERT INTO sessions (id, pdf_name, created_at, page_count, word_count, status, last_accessed)
-     VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
-    [params.id, params.pdf_name, Date.now(), params.page_count, params.word_count, Date.now()]
+    `INSERT INTO sessions (id, pdf_name, created_at, page_count, word_count, status, last_accessed, subject_id)
+     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`,
+    [
+      params.id,
+      params.pdf_name,
+      Date.now(),
+      params.page_count,
+      params.word_count,
+      Date.now(),
+      params.subject_id ?? null,
+    ]
   );
 }
 

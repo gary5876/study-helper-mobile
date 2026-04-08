@@ -5,14 +5,13 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-04-02)
+## 현재 상태 (2026-04-08)
 
 ### 완성된 화면 및 기능
 
-- [x] **PlanSelectionScreen** — TimelyGPT 추천 최상단 배치 + 추천 배지, 무료 플랜, Anthropic/OpenAI 고급 옵션 토글로 접기
-- [x] **ApiKeySetupScreen** — 플랜별 동적 UI (제목·placeholder·검증 규칙·발급 링크 자동 변경) + 모델 선택 칩 UI + TimelyGPT 단계별 발급 안내 (설정→연동 키 관리→재발급→복사) + 크레딧 소모 안내
-- [x] **HomeScreen** — 세션 목록, 복습 예정 카운터, 새 세션 FAB, 플랜 변경 설정 아이콘, 한/EN 언어 토글
-- [x] **UploadScreen** — 최초 업로드 전 동의 모달(1회, PDF 외부 전송·문제은행 공유·API 키 처리 고지, SQLite 동의 기록) + PDF 선택 + 업로드 + 생성 진행률 실시간 표시
+- [x] **PlanSelectionScreen** — 서비스 드롭다운(TimelyGPT/Anthropic/OpenAI) + 모델 드롭다운 + API Key 입력 한 화면으로 통합. 저장된 키는 ●●● 마스킹 + 변경 버튼. TimelyGPT 키 발급 가이드 내장. *(Gemini 무료 옵션은 키 확보 후 재노출)*
+- [x] **HomeScreen** — **과목별 탭 필터** (전체·미분류·과목별 수평 스크롤 탭) + 과목 추가 모달 + 세션 카드에 과목 배지 표시 + 복습 예정 카운터 + 새 세션 FAB + 한/EN 언어 토글
+- [x] **UploadScreen** — 최초 업로드 전 동의 모달(1회) + PDF 선택 → **과목 선택 단계** (기존 과목 칩 / 새 과목 생성) → 업로드 + 생성 진행률 실시간 표시
 - [x] **StudyNotesScreen** — 핵심 개념 칩 · 섹션 요약 · 용어집
 - [x] **MCQScreen** — 4지선다 퀴즈, 즉각 피드백, 개념 설명
 - [x] **FillBlankScreen** — 빈칸 채우기, 퍼지 매칭 (Levenshtein 80%)
@@ -37,48 +36,35 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ### 1. PlanSelectionScreen (`PlanSelection`)
 
-최초 실행 시 진입. 플랜이 이미 선택되어 있으면 자동 건너뜀.
+최초 실행 시 진입. 설정 완료 후 HomeScreen으로 이동.
 HomeScreen 헤더의 설정(⚙) 아이콘으로 언제든 재진입 가능.
 
 ```
-진입 조건 A: 플랜 미선택 (hasPlanSelected() === false) — 초기 온보딩
-진입 조건 B: HomeScreen 헤더 설정 아이콘 탭 — 플랜 변경
+진입 조건 A: 플랜 미선택 — 초기 온보딩
+진입 조건 B: API 키 없음 — 재설정
+진입 조건 C: HomeScreen 헤더 설정 아이콘 탭 — 플랜 변경
 
-화면 구성:
-  ① TimelyGPT (추천 배지 + 보라색 강조 테두리) — 최상단
-  ② 무료 플랜
-  ③ "직접 API 키 사용하기" 토글 → Anthropic / OpenAI 카드 펼침
+화면 구성 (단일 카드):
+  [서비스  ▾]  TimelyGPT / Anthropic Claude / OpenAI GPT
+               ※ Google Gemini(무료)는 키 확보 후 재노출 예정
+  [모델    ▾]  서비스에 따라 모델 목록 자동 변경
+  [API Key  ]  저장된 키는 ●●● + 변경 버튼
+  [시작하기 ]  → savePlan + saveApiKey + setModel → HomeScreen (navigation.reset)
 
-  ├─▶ TimelyGPT 선택     → savePlan('timely') → ApiKeySetupScreen
-  ├─▶ 무료 플랜 선택      → savePlan('free')   → HomeScreen
-  ├─▶ Anthropic 선택     → savePlan('paid')   → ApiKeySetupScreen
-  └─▶ OpenAI GPT 선택    → savePlan('gpt')    → ApiKeySetupScreen
-
-※ 플랜 변경 시 navigation.reset으로 스택 초기화 (뒤로가기 꼬임 방지)
-```
-
-### 2. ApiKeySetupScreen (`ApiKeySetup`)
-
-비무료 플랜 선택 시 진입. API 키가 SecureStore에 저장되어 있으면 자동 건너뜀.
-플랜에 따라 제목·placeholder·유효성 검사·발급 링크가 동적으로 변경됩니다.
-
-```
-진입 조건: 비무료 플랜 선택 && SecureStore에 API 키 없음
-  ├─▶ paid   → Anthropic API 키 입력 (sk-ant-...)
-  ├─▶ gpt    → OpenAI API 키 입력 (sk-...)
-  └─▶ timely → TimelyGPT API 키 입력
-               단계별 발급 안내 박스 표시:
-               ① 설정 탭 이동 ② 연동 키 관리 선택 ③ 재발급 ④ 복사 후 붙여넣기
-               크레딧 소모 안내: "학습 콘텐츠 생성 시 본인 계정의 크레딧이 사용됩니다."
-  └─▶ 저장 → HomeScreen
+※ 플랜 변경 시 navigation.reset으로 스택 초기화
 ```
 
 ### 2. HomeScreen (`Home`)
 
-모든 세션 목록 표시. SQLite `sessions` 테이블 조회.
+모든 세션 목록 표시. SQLite `sessions` + `subjects` 테이블 조회.
 
 ```
-  ├─▶ 세션 탭 → StudyNotesScreen (기존 세션)
+  ├─▶ 과목 탭 바 (수평 스크롤):
+  │     [전체] [미분류] [과목1] [과목2] ... [과목 추가]
+  │     탭 선택 → 해당 과목 세션만 필터링
+  │     [과목 추가] 탭 → 과목 이름 입력 모달
+  ├─▶ 세션 카드 탭 → StudyNotesScreen (status === 'ready'인 경우)
+  │     세션 카드에 과목 배지(컬러 점 + 이름) 표시
   ├─▶ 복습 예정 카운터 (SM-2 due_date <= 오늘)
   ├─▶ FAB (+) → UploadScreen
   └─▶ 헤더 설정(⚙) 아이콘 → PlanSelectionScreen (플랜 변경)
@@ -86,27 +72,23 @@ HomeScreen 헤더의 설정(⚙) 아이콘으로 언제든 재진입 가능.
 
 ### 3. UploadScreen (`Upload`)
 
-PDF 선택 → 업로드 → 생성 → StudyNotes.
+PDF 선택 → 과목 선택 → 업로드 → 생성 → StudyNotes.
 
 ```
   └─▶ 동의 확인 (최초 1회):
         SQLite user_settings 'upload_consent_given' 조회
-        미동의 시 바텀 시트 모달 표시:
-          - PDF 내용이 외부 AI 서비스로 전송됨
-          - 생성된 콘텐츠가 문제은행에 저장되어 다른 사용자와 공유 가능
-          - API 키는 서버로 전송되나 저장되지 않음
-        동의 → setSetting('upload_consent_given', '1') 저장 후 진행
-  └─▶ expo-document-picker로 PDF 선택
-  └─▶ getPlan() 로드 → plan 인식
-  └─▶ POST /upload (plan 필드 포함 · 유료 플랜만 X-API-Key 헤더)
-  └─▶ POST /generate (plan + session_id · 유료 플랜만 X-API-Key 헤더)
-  └─▶ GET /status 폴링 (3초 간격, 최대 5분)
-        5%  → 업로드 완료
-        40% → 학습 노트 생성됨
-        80% → MCQ 생성됨
-        100% → 빈칸 채우기 완료
-  └─▶ GET /result
-  └─▶ SQLite study_content 저장
+        미동의 시 바텀 시트 모달 표시 → 동의 기록
+  └─▶ expo-document-picker로 PDF 선택 (최대 20MB)
+  └─▶ [과목 선택 단계 — subject_select]:
+        기존 과목 칩 목록 (탭 선택)
+        [+ 새 과목] 칩 탭 → 이름 입력창 노출
+        [생성 시작] 버튼 → 과목 ID 확정
+          - 새 과목 이름 입력됨 → createSubject() 후 ID 사용
+          - 기존 과목 선택 → 해당 ID 사용
+          - 미분류 선택 → subject_id = NULL
+  └─▶ createSession({ ..., subject_id }) 로컬 저장
+  └─▶ POST /upload → POST /generate → GET /status 폴링
+  └─▶ GET /result → SQLite study_content 저장
   └─▶ StudyNotesScreen
 ```
 
@@ -228,16 +210,17 @@ quality < 3 (망각):
 
 모든 데이터는 기기 SQLite에만 저장됩니다. 서버에 저장하지 않습니다.
 
-### 테이블 구조 (6개)
+### 테이블 구조 (7개)
 
 | 테이블 | 주요 컬럼 | 설명 |
 |--------|-----------|------|
-| `sessions` | id, pdf_name, status, created_at | PDF 메타데이터 + 생성 상태 |
+| `subjects` | id, name, color, created_at | 과목 분류 (v2 추가) |
+| `sessions` | id, pdf_name, status, subject_id, created_at | PDF 메타데이터 + 과목 FK (v2 추가) |
 | `study_content` | session_id, notes_json, mcq_json, fill_json | AI 생성 콘텐츠 (JSON 블롭) |
 | `attempts` | id, session_id, quiz_type, score_pct, completed_at | 퀴즈 시도 기록 |
 | `answers` | attempt_id, question_id, user_answer, is_correct, time_spent_ms | 문제별 답변 |
 | `review_schedule` | concept_id, interval, ease_factor, repetitions, due_date | SM-2 복습 스케줄 |
-| `user_settings` | key, value | 앱 설정값 (키/값 쌍) — `upload_consent_given`: 업로드 동의 완료 여부 |
+| `user_settings` | key, value | 앱 설정값 — `upload_consent_given`, `db_version` |
 
 ---
 
@@ -381,9 +364,8 @@ maestro test .maestro/03_mcq_quiz_flow.yaml
 src/
 ├── config/
 │   └── env.ts                 환경별 설정 (BACKEND_URL 등)
-├── screens/                   화면 10개
-│   ├── PlanSelectionScreen.tsx
-│   ├── ApiKeySetupScreen.tsx
+├── screens/                   화면 9개
+│   ├── PlanSelectionScreen.tsx  (서비스·모델·API키 통합 설정)
 │   ├── HomeScreen.tsx
 │   ├── UploadScreen.tsx
 │   ├── StudyNotesScreen.tsx
@@ -396,7 +378,8 @@ src/
 │   ├── QuestionCard.tsx       MCQ 렌더러
 │   ├── FeedbackModal.tsx      정답/오답 모달
 │   ├── ConceptHighlight.tsx   개념 정의 모달
-│   └── ProgressBar.tsx        퀴즈 진행 표시
+│   ├── ProgressBar.tsx        퀴즈 진행 표시
+│   └── SubjectTabBar.tsx      과목 수평 탭 필터 (HomeScreen)
 ├── services/
 │   ├── api.ts                 백엔드 HTTP 클라이언트
 │   ├── storage.ts             SQLite CRUD (25개 함수)

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Modal, ScrollView } from 'react-native';
-import { Text, Button, Card, ProgressBar, ActivityIndicator, Divider } from 'react-native-paper';
+import {
+  View, StyleSheet, Alert, Modal, ScrollView, TextInput, TouchableOpacity,
+} from 'react-native';
+import { Text, Button, Card, ProgressBar, ActivityIndicator, Divider, Chip } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -9,6 +11,7 @@ import {
 } from '../services/api';
 import {
   createSession, updateSessionStatus, saveStudyContent, getSetting, setSetting,
+  getAllSubjects, createSubject, SubjectRow,
 } from '../services/storage';
 import { useSessionStore } from '../store/sessionStore';
 import { useLanguageStore } from '../store/languageStore';
@@ -17,7 +20,7 @@ import { STRINGS } from '../i18n/strings';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Upload'>;
 
-type Stage = 'idle' | 'uploading' | 'generating' | 'done' | 'error';
+type Stage = 'idle' | 'subject_select' | 'uploading' | 'generating' | 'done' | 'error';
 
 const CONSENT_KEY = 'upload_consent_given';
 
@@ -26,7 +29,15 @@ export default function UploadScreen({ navigation }: Props) {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
   const [fileName, setFileName] = useState('');
+  const [fileUri, setFileUri] = useState('');
   const [showConsent, setShowConsent] = useState(false);
+
+  // Subject selection state
+  const [subjects, setSubjects] = useState<SubjectRow[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [showNewSubjectInput, setShowNewSubjectInput] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState('');
+
   const setSession = useSessionStore((state) => state.setSession);
   const { lang } = useLanguageStore();
   const { getModel } = useModelStore();
@@ -38,16 +49,16 @@ export default function UploadScreen({ navigation }: Props) {
       setShowConsent(true);
       return;
     }
-    await pickAndUpload();
+    await pickAndSelectSubject();
   }
 
   async function handleConsentAgree() {
     await setSetting(CONSENT_KEY, '1');
     setShowConsent(false);
-    await pickAndUpload();
+    await pickAndSelectSubject();
   }
 
-  async function pickAndUpload() {
+  async function pickAndSelectSubject() {
     const result = await DocumentPicker.getDocumentAsync({
       type: 'application/pdf',
       copyToCacheDirectory: true,
@@ -58,14 +69,41 @@ export default function UploadScreen({ navigation }: Props) {
     if (!asset.uri) return;
 
     const name = asset.name || 'document.pdf';
-    setFileName(name);
-
     const fileSizeMB = (asset.size ?? 0) / (1024 * 1024);
     if (fileSizeMB > 20) {
       Alert.alert(s.uploadFileTooLarge, s.uploadFileTooLargeDesc);
       return;
     }
 
+    const loadedSubjects = await getAllSubjects();
+    setSubjects(loadedSubjects);
+    setFileName(name);
+    setFileUri(asset.uri);
+    setSelectedSubjectId(null); // default: uncategorized
+    setShowNewSubjectInput(false);
+    setNewSubjectName('');
+    setStage('subject_select');
+  }
+
+  async function handleConfirmSubject() {
+    let subjectId: string | null = null;
+
+    if (showNewSubjectInput && newSubjectName.trim()) {
+      try {
+        const created = await createSubject(newSubjectName.trim());
+        subjectId = created.id;
+      } catch {
+        Alert.alert('오류', '과목 생성에 실패했습니다. 이미 같은 이름이 있을 수 있습니다.');
+        return;
+      }
+    } else {
+      subjectId = selectedSubjectId;
+    }
+
+    await doUpload(subjectId);
+  }
+
+  async function doUpload(subjectId: string | null) {
     const plan = (await getPlan()) ?? 'paid';
     const apiKey = plan !== 'free' ? (await getApiKey() ?? '') : '';
     if (plan !== 'free' && !apiKey) {
@@ -78,13 +116,14 @@ export default function UploadScreen({ navigation }: Props) {
       setProgress(0.05);
       setStatusText(s.uploadUploading);
 
-      const uploadRes = await uploadPDF(asset.uri, name, apiKey, plan);
+      const uploadRes = await uploadPDF(fileUri, fileName, apiKey, plan);
 
       await createSession({
         id: uploadRes.session_id,
-        pdf_name: name,
+        pdf_name: fileName,
         page_count: uploadRes.page_count,
         word_count: uploadRes.word_count,
+        subject_id: subjectId,
       });
 
       setStage('generating');
@@ -123,6 +162,17 @@ export default function UploadScreen({ navigation }: Props) {
     }
   }
 
+  function selectExistingSubject(id: string | null) {
+    setSelectedSubjectId(id);
+    setShowNewSubjectInput(false);
+    setNewSubjectName('');
+  }
+
+  function openNewSubjectInput() {
+    setShowNewSubjectInput(true);
+    setSelectedSubjectId(null);
+  }
+
   return (
     <View style={styles.container}>
       {/* 동의 모달 — 최초 업로드 시 1회만 표시 */}
@@ -153,6 +203,15 @@ export default function UploadScreen({ navigation }: Props) {
                 입력한 API 키는 기기에 저장되며, 학습 자료 생성 요청 시 서버로 전송됩니다.
                 서버는 API 키를 저장하지 않습니다.
               </Text>
+
+              <Divider style={styles.consentDivider} />
+
+              <Text variant="labelMedium" style={styles.consentSectionTitle}>저작권 준수</Text>
+              <Text variant="bodySmall" style={styles.consentBody}>
+                업로드하는 파일에 대한 적법한 사용 권한은 사용자 본인에게 있습니다.
+                저작권법에 의해 보호되는 자료를 권한 없이 업로드하는 행위는 이용약관 위반이며,
+                그에 따른 법적 책임은 사용자 본인이 부담합니다.
+              </Text>
             </ScrollView>
 
             <Button
@@ -172,6 +231,7 @@ export default function UploadScreen({ navigation }: Props) {
 
       <Card style={styles.card}>
         <Card.Content style={styles.content}>
+          {/* ── Idle: PDF 선택 ── */}
           {stage === 'idle' && (
             <>
               <Text variant="titleLarge" style={styles.title}>{s.uploadTitle}</Text>
@@ -188,6 +248,112 @@ export default function UploadScreen({ navigation }: Props) {
             </>
           )}
 
+          {/* ── Subject Select: 과목 선택 ── */}
+          {stage === 'subject_select' && (
+            <>
+              <Text variant="titleLarge" style={styles.title}>{s.subjectSelectStep}</Text>
+              <Text variant="bodySmall" style={styles.fileName} numberOfLines={1}>{fileName}</Text>
+              <Text variant="bodyMedium" style={styles.description}>{s.subjectSelectDesc}</Text>
+
+              <ScrollView
+                style={styles.chipsScroll}
+                contentContainerStyle={styles.chipsContainer}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* 미분류 chip */}
+                <TouchableOpacity
+                  onPress={() => selectExistingSubject(null)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[
+                    styles.subjectChip,
+                    (!selectedSubjectId && !showNewSubjectInput) && styles.subjectChipSelected,
+                  ]}>
+                    <Text style={[
+                      styles.subjectChipText,
+                      (!selectedSubjectId && !showNewSubjectInput) && styles.subjectChipTextSelected,
+                    ]}>
+                      {s.subjectUncategorized}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* 기존 과목 chips */}
+                {subjects.map((sub) => {
+                  const isSelected = selectedSubjectId === sub.id && !showNewSubjectInput;
+                  return (
+                    <TouchableOpacity
+                      key={sub.id}
+                      onPress={() => selectExistingSubject(sub.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[
+                        styles.subjectChip,
+                        isSelected && { backgroundColor: sub.color, borderColor: sub.color },
+                      ]}>
+                        <Text style={[
+                          styles.subjectChipText,
+                          isSelected && styles.subjectChipTextSelected,
+                        ]}>
+                          {sub.name}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+
+                {/* 새 과목 chip */}
+                <TouchableOpacity onPress={openNewSubjectInput} activeOpacity={0.7}>
+                  <View style={[
+                    styles.subjectChip,
+                    styles.newSubjectChip,
+                    showNewSubjectInput && styles.newSubjectChipActive,
+                  ]}>
+                    <Text style={[
+                      styles.subjectChipText,
+                      styles.newSubjectChipText,
+                      showNewSubjectInput && styles.newSubjectChipTextActive,
+                    ]}>
+                      {s.subjectNewLabel}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </ScrollView>
+
+              {/* 새 과목 입력창 */}
+              {showNewSubjectInput && (
+                <TextInput
+                  style={styles.subjectInput}
+                  placeholder={s.subjectNamePlaceholder}
+                  value={newSubjectName}
+                  onChangeText={setNewSubjectName}
+                  autoFocus
+                  maxLength={30}
+                />
+              )}
+
+              <Button
+                mode="contained"
+                onPress={handleConfirmSubject}
+                style={styles.button}
+                contentStyle={styles.buttonContent}
+                buttonColor="#6c63ff"
+                disabled={showNewSubjectInput && !newSubjectName.trim()}
+              >
+                {s.uploadStartBtn}
+              </Button>
+
+              <Button
+                mode="text"
+                onPress={() => setStage('idle')}
+                textColor="#999"
+              >
+                {s.subjectCancel}
+              </Button>
+            </>
+          )}
+
+          {/* ── Uploading / Generating ── */}
           {(stage === 'uploading' || stage === 'generating') && (
             <>
               <ActivityIndicator animating size="large" color="#6c63ff" />
@@ -198,6 +364,7 @@ export default function UploadScreen({ navigation }: Props) {
             </>
           )}
 
+          {/* ── Error ── */}
           {stage === 'error' && (
             <>
               <Text variant="titleMedium" style={styles.errorTitle}>{s.uploadFailed}</Text>
@@ -217,16 +384,44 @@ const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#f5f5f5' },
   card: { borderRadius: 16 },
   content: { alignItems: 'center', padding: 16, gap: 16 },
-  title: { fontWeight: 'bold' },
+  title: { fontWeight: 'bold', textAlign: 'center' },
   description: { textAlign: 'center', color: '#666', lineHeight: 22 },
   button: { marginTop: 8, borderRadius: 8, minWidth: 180 },
   buttonContent: { paddingVertical: 6 },
-  fileName: { fontWeight: '600', textAlign: 'center' },
+  fileName: { fontWeight: '600', textAlign: 'center', color: '#333' },
   statusText: { color: '#666', textAlign: 'center' },
   progressBar: { width: '100%', height: 8, borderRadius: 4 },
   pct: { color: '#999' },
   errorTitle: { fontWeight: 'bold', color: '#e53935' },
   errorText: { textAlign: 'center', color: '#666' },
+
+  // Subject chips
+  chipsScroll: { maxHeight: 140, width: '100%' },
+  chipsContainer: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 8,
+    paddingVertical: 4,
+  },
+  subjectChip: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20, borderWidth: 1, borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  subjectChipSelected: {
+    backgroundColor: '#9e9e9e', borderColor: '#9e9e9e',
+  },
+  subjectChipText: { fontSize: 13, color: '#555', fontWeight: '500' },
+  subjectChipTextSelected: { color: '#fff', fontWeight: '700' },
+  newSubjectChip: { borderColor: '#6c63ff', borderStyle: 'dashed' },
+  newSubjectChipActive: { backgroundColor: '#6c63ff', borderColor: '#6c63ff' },
+  newSubjectChipText: { color: '#6c63ff' },
+  newSubjectChipTextActive: { color: '#fff' },
+  subjectInput: {
+    width: '100%', borderWidth: 1, borderColor: '#6c63ff',
+    borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10,
+    fontSize: 15,
+  },
+
+  // Consent modal
   modalOverlay: {
     flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',

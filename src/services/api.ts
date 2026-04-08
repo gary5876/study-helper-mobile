@@ -12,7 +12,7 @@ export const API_KEY_STORAGE_KEY = 'anthropic_api_key';
 export const BASE_URL_STORAGE_KEY = 'backend_base_url';
 export const PLAN_STORAGE_KEY = 'selected_plan';
 
-export type Plan = 'free' | 'paid' | 'gpt' | 'timely';
+export type Plan = 'paid' | 'gpt' | 'timely';
 const DEFAULT_BASE_URL = ENV.BACKEND_URL;
 
 // ─────────────────────────────────────────
@@ -120,7 +120,7 @@ export async function savePlan(plan: Plan): Promise<void> {
 
 export async function getPlan(): Promise<Plan | null> {
   const stored = await SecureStore.getItemAsync(PLAN_STORAGE_KEY);
-  if (stored === 'free' || stored === 'paid' || stored === 'gpt' || stored === 'timely') return stored;
+  if (stored === 'paid' || stored === 'gpt' || stored === 'timely') return stored;
   return null;
 }
 
@@ -199,7 +199,7 @@ export async function uploadPDF(
   form.append('plan', plan);
 
   const headers: Record<string, string> = { 'Content-Type': 'multipart/form-data' };
-  if (plan !== 'free' && apiKey) headers['X-API-Key'] = apiKey;
+  if (apiKey) headers['X-API-Key'] = apiKey;
 
   const res = await client.post<UploadResponse>('/upload', form, { headers });
   return res.data;
@@ -214,7 +214,7 @@ export async function startGeneration(
 ): Promise<void> {
   const client = await createClient();
   const headers: Record<string, string> = {};
-  if (plan !== 'free' && apiKey) headers['X-API-Key'] = apiKey;
+  if (apiKey) headers['X-API-Key'] = apiKey;
 
   const body: Record<string, unknown> = { session_id: sessionId, plan, lang };
   if (model) body.options = { model };

@@ -1,215 +1,322 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Button, Card, Chip } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import {
+  View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Linking,
+} from 'react-native';
+import { Text, Button, Card, Menu, TextInput, HelperText } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { CommonActions } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { savePlan } from '../services/api';
+import { savePlan, saveApiKey, getPlan, getApiKey, Plan } from '../services/api';
+import { useModelStore, PLAN_MODELS, DEFAULT_MODELS } from '../store/modelStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PlanSelection'>;
 
-export default function PlanSelectionScreen({ navigation }: Props) {
-  const [showAdvanced, setShowAdvanced] = useState(false);
+interface ServiceOption {
+  plan: Plan;
+  label: string;
+  needsKey: boolean;
+  keyPlaceholder: string;
+  keyHint: string;
+  validate: (k: string) => boolean;
+  validationMsg: string;
+}
 
-  function goTo(screen: keyof RootStackParamList) {
-    if (navigation.canGoBack()) {
-      navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: screen }] }));
-    } else {
-      navigation.replace(screen as any);
+const SERVICES: ServiceOption[] = [
+  {
+    plan: 'timely',
+    label: 'TimelyGPT',
+    needsKey: true,
+    keyPlaceholder: 'tgpt-sk-...',
+    keyHint: 'timelygpt.co.kr → 설정 → 연동 키 관리',
+    validate: (k) => k.length >= 10,
+    validationMsg: '키가 너무 짧습니다. 올바른 키인지 확인해 주세요.',
+  },
+  {
+    plan: 'paid',
+    label: 'Anthropic Claude',
+    needsKey: true,
+    keyPlaceholder: 'sk-ant-api03-...',
+    keyHint: 'console.anthropic.com에서 발급',
+    validate: (k) => k.startsWith('sk-ant-'),
+    validationMsg: 'Anthropic 키는 보통 sk-ant- 로 시작합니다.',
+  },
+  {
+    plan: 'gpt',
+    label: 'OpenAI GPT',
+    needsKey: true,
+    keyPlaceholder: 'sk-...',
+    keyHint: 'platform.openai.com에서 발급',
+    validate: (k) => k.startsWith('sk-'),
+    validationMsg: 'OpenAI 키는 보통 sk- 로 시작합니다.',
+  },
+];
+
+export default function PlanSelectionScreen({ navigation }: Props) {
+  const [selectedPlan, setSelectedPlan] = useState<Plan>('timely');
+  const [selectedModel, setSelectedModelLocal] = useState(DEFAULT_MODELS['timely']);
+  const [apiKey, setApiKey] = useState('');
+  const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [editingKey, setEditingKey] = useState(false);
+  const [serviceMenuOpen, setServiceMenuOpen] = useState(false);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false); // 이미 설정이 있는 경우
+  const { setModel } = useModelStore();
+
+  useEffect(() => {
+    (async () => {
+      const plan = await getPlan();
+      if (plan) {
+        setIsEditing(true);
+        setSelectedPlan(plan);
+        setSelectedModelLocal(DEFAULT_MODELS[plan]);
+        const key = await getApiKey();
+        if (key) setApiKeySaved(true);
+      }
+    })();
+  }, []);
+
+  const service = SERVICES.find((s) => s.plan === selectedPlan)!;
+  const models = PLAN_MODELS[selectedPlan];
+
+  function handleSelectService(plan: Plan) {
+    setSelectedPlan(plan);
+    setSelectedModelLocal(DEFAULT_MODELS[plan]);
+    setApiKey('');
+    setApiKeySaved(false);
+    setEditingKey(false);
+    setError('');
+    setServiceMenuOpen(false);
+  }
+
+  function handleSelectModel(model: string) {
+    setSelectedModelLocal(model);
+    setModelMenuOpen(false);
+  }
+
+  async function handleSave() {
+    if (service.needsKey && !apiKeySaved && !apiKey.trim()) {
+      setError('API 키를 입력해주세요.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await savePlan(selectedPlan);
+      setModel(selectedPlan, selectedModel);
+      if (service.needsKey && (editingKey || !apiKeySaved) && apiKey.trim()) {
+        await saveApiKey(apiKey.trim());
+      }
+      navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Home' }] }));
+    } catch {
+      setError('설정 저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
     }
   }
 
-  async function handleSelectFree() {
-    await savePlan('free');
-    goTo('Home');
-  }
-
-  async function handleSelectPaid() {
-    await savePlan('paid');
-    goTo('ApiKeySetup');
-  }
-
-  async function handleSelectGpt() {
-    await savePlan('gpt');
-    goTo('ApiKeySetup');
-  }
-
-  async function handleSelectTimely() {
-    await savePlan('timely');
-    goTo('ApiKeySetup');
-  }
+  const canSave = !service.needsKey || apiKeySaved || apiKey.trim().length > 0;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>Study Helper</Text>
-        <Text variant="bodyMedium" style={styles.subtitle}>플랜을 선택해주세요</Text>
-      </View>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+          <Text variant="displaySmall" style={styles.title}>Fundamentals</Text>
+          <Text variant="bodyLarge" style={styles.subtitle}>Your AI-powered study companion</Text>
+        </View>
 
-      {/* TimelyGPT — 추천 플랜 */}
-      <Card style={styles.recommendedCard} mode="elevated">
-        <Card.Content>
-          <View style={styles.planTitleRow}>
-            <Text variant="titleLarge" style={styles.planTitle}>TimelyGPT</Text>
-            <Chip style={styles.recommendedBadge} textStyle={styles.recommendedBadgeText}>추천</Chip>
-          </View>
-          <Text variant="bodyMedium" style={styles.planDesc}>
-            Claude, GPT, Gemini 중 원하는 AI로 학습 자료를 분석하고,{'\n'}
-            TimelyGPT 크레딧으로 나만의 공부법을 완성하세요.
-          </Text>
-          <Text variant="bodySmall" style={styles.planNote}>
-            • TimelyGPT API 키 필요{'\n'}
-            • Claude, GPT, Gemini 등 50+ 모델 지원{'\n'}
-            • timelygpt.co.kr에서 크레딧 및 키 관리
-          </Text>
-        </Card.Content>
-        <Card.Actions>
-          <Button mode="contained" onPress={handleSelectTimely} style={styles.button} buttonColor="#6c63ff">
-            TimelyGPT로 시작
-          </Button>
-        </Card.Actions>
-      </Card>
+        <Card style={styles.card}>
+          <Card.Content style={styles.cardContent}>
+            <Text variant="titleMedium" style={styles.cardTitle}>AI 서비스 설정</Text>
 
-      {/* 무료 플랜 */}
-      <Card style={styles.card} mode="outlined">
-        <Card.Content>
-          <Text variant="titleLarge" style={styles.planTitle}>무료 플랜</Text>
-          <Text variant="bodyMedium" style={styles.planDesc}>
-            API 키 없이 바로 시작할 수 있습니다.{'\n'}
-            Google Gemini 모델로 학습 콘텐츠를 생성합니다.
-          </Text>
-          <Text variant="bodySmall" style={styles.planNote}>
-            • API 키 불필요{'\n'}
-            • Google Gemini 2.0 Flash 사용{'\n'}
-            • 서버 트래픽에 따라 속도 차이 있을 수 있음
-          </Text>
-        </Card.Content>
-        <Card.Actions>
-          <Button mode="contained" onPress={handleSelectFree} style={styles.button}>
-            무료로 시작
-          </Button>
-        </Card.Actions>
-      </Card>
+            {/* ── 서비스 드롭다운 ── */}
+            <Text variant="labelMedium" style={styles.label}>서비스</Text>
+            <Menu
+              visible={serviceMenuOpen}
+              onDismiss={() => setServiceMenuOpen(false)}
+              anchor={
+                <TouchableOpacity
+                  style={styles.dropdown}
+                  onPress={() => setServiceMenuOpen(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.dropdownText}>{service.label}</Text>
+                  <Text style={styles.dropdownArrow}>▾</Text>
+                </TouchableOpacity>
+              }
+            >
+              {SERVICES.map((s) => (
+                <Menu.Item
+                  key={s.plan}
+                  title={s.label}
+                  onPress={() => handleSelectService(s.plan)}
+                  titleStyle={selectedPlan === s.plan ? styles.menuItemSelected : undefined}
+                />
+              ))}
+            </Menu>
 
-      {/* 고급 옵션 토글 */}
-      <TouchableOpacity onPress={() => setShowAdvanced(!showAdvanced)} style={styles.advancedToggle}>
-        <Text variant="bodySmall" style={styles.advancedToggleText}>
-          {showAdvanced ? '▲ 고급 옵션 접기' : '▼ 직접 API 키 사용하기 (Anthropic / OpenAI)'}
-        </Text>
-      </TouchableOpacity>
+            {/* ── 모델 드롭다운 ── */}
+            <Text variant="labelMedium" style={[styles.label, styles.labelGap]}>모델</Text>
+            <Menu
+              visible={modelMenuOpen}
+              onDismiss={() => setModelMenuOpen(false)}
+              anchor={
+                <TouchableOpacity
+                  style={styles.dropdown}
+                  onPress={() => setModelMenuOpen(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.dropdownText} numberOfLines={1}>{selectedModel}</Text>
+                  <Text style={styles.dropdownArrow}>▾</Text>
+                </TouchableOpacity>
+              }
+            >
+              {models.map((m) => (
+                <Menu.Item
+                  key={m}
+                  title={m + (m === DEFAULT_MODELS[selectedPlan] ? '  (기본값)' : '')}
+                  onPress={() => handleSelectModel(m)}
+                  titleStyle={selectedModel === m ? styles.menuItemSelected : undefined}
+                />
+              ))}
+            </Menu>
 
-      {showAdvanced && (
-        <>
-          <Card style={styles.card} mode="outlined">
-            <Card.Content>
-              <Text variant="titleLarge" style={styles.planTitle}>Anthropic Claude</Text>
-              <Text variant="bodyMedium" style={styles.planDesc}>
-                본인의 Anthropic API 키를 사용합니다.{'\n'}
-                Claude Sonnet 모델로 높은 품질의 콘텐츠를 생성합니다.
-              </Text>
-              <Text variant="bodySmall" style={styles.planNote}>
-                • Anthropic API 키 필요 (sk-ant-...){'\n'}
-                • Claude Sonnet 사용{'\n'}
-                • console.anthropic.com에서 발급
-              </Text>
-            </Card.Content>
-            <Card.Actions>
-              <Button mode="outlined" onPress={handleSelectPaid} style={styles.button}>
-                Anthropic 키로 시작
-              </Button>
-            </Card.Actions>
-          </Card>
+            {/* ── API Key ── */}
+            {service.needsKey && (
+              <>
+                <Text variant="labelMedium" style={[styles.label, styles.labelGap]}>API Key</Text>
+                {apiKeySaved && !editingKey ? (
+                  <View style={styles.savedRow}>
+                    <Text style={styles.savedText}>●●●●●●●●●●●●  저장됨</Text>
+                    <Button
+                      mode="text"
+                      compact
+                      textColor="#6c63ff"
+                      onPress={() => { setEditingKey(true); setApiKey(''); }}
+                    >
+                      변경
+                    </Button>
+                  </View>
+                ) : (
+                  <TextInput
+                    value={apiKey}
+                    onChangeText={(t) => { setApiKey(t); setError(''); }}
+                    secureTextEntry
+                    mode="outlined"
+                    placeholder={service.keyPlaceholder}
+                    style={styles.input}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                )}
+                {/* 형식 경고 — 저장은 가능 */}
+                {apiKey.trim().length > 0 && !service.validate(apiKey.trim()) && (
+                  <Text style={styles.warning}>⚠ {service.validationMsg}</Text>
+                )}
+              </>
+            )}
 
-          <Card style={styles.card} mode="outlined">
-            <Card.Content>
-              <Text variant="titleLarge" style={styles.planTitle}>OpenAI GPT</Text>
-              <Text variant="bodyMedium" style={styles.planDesc}>
-                본인의 OpenAI API 키를 사용합니다.{'\n'}
-                GPT-4o-mini 모델로 학습 콘텐츠를 생성합니다.
-              </Text>
-              <Text variant="bodySmall" style={styles.planNote}>
-                • OpenAI API 키 필요 (sk-...){'\n'}
-                • GPT-4o-mini 사용{'\n'}
-                • platform.openai.com에서 발급
-              </Text>
-            </Card.Content>
-            <Card.Actions>
-              <Button mode="outlined" onPress={handleSelectGpt} style={styles.button}>
-                OpenAI 키로 시작
-              </Button>
-            </Card.Actions>
-          </Card>
-        </>
-      )}
-    </ScrollView>
+            {/* ── 힌트 ── */}
+            <Text variant="bodySmall" style={styles.hint}>{service.keyHint}</Text>
+
+            {/* ── TimelyGPT 가이드 ── */}
+            {selectedPlan === 'timely' && (
+              <View style={styles.guideBox}>
+                <Text variant="labelSmall" style={styles.guideTitle}>키 발급 방법</Text>
+                <Text variant="bodySmall" style={styles.guideStep}>① TimelyGPT 앱 → 설정 탭</Text>
+                <Text variant="bodySmall" style={styles.guideStep}>② 연동 키 관리 → 재발급</Text>
+                <Text variant="bodySmall" style={styles.guideStep}>③ 복사 후 위에 붙여넣기</Text>
+                <Text variant="bodySmall" style={styles.guideNote}>
+                  콘텐츠 생성 시 본인 계정 크레딧이 사용됩니다.
+                </Text>
+              </View>
+            )}
+
+            {!!error && <HelperText type="error">{error}</HelperText>}
+
+            <Button
+              mode="contained"
+              onPress={handleSave}
+              loading={loading}
+              disabled={loading || !canSave}
+              style={styles.button}
+              contentStyle={styles.buttonContent}
+              buttonColor="#6c63ff"
+            >
+              {isEditing ? '저장' : '시작하기'}
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <TouchableOpacity
+          onPress={() => Linking.openURL('https://study-helper-web.vercel.app/privacy')}
+          style={styles.privacyLink}
+        >
+          <Text variant="bodySmall" style={styles.privacyLinkText}>개인정보처리방침</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 24,
-    paddingTop: 48,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  title: {
-    textAlign: 'center',
-    marginBottom: 8,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    textAlign: 'center',
-    opacity: 0.6,
-  },
-  recommendedCard: {
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#6c63ff',
-    borderRadius: 16,
-  },
-  card: {
-    marginBottom: 16,
-    borderRadius: 16,
-  },
-  planTitleRow: {
+  container: { flex: 1, backgroundColor: '#1a1a2e' },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  header: { alignItems: 'center', marginBottom: 32 },
+  title: { color: '#fff', fontWeight: 'bold' },
+  subtitle: { color: '#aaa', marginTop: 8 },
+
+  card: { borderRadius: 16 },
+  cardContent: { gap: 4 },
+  cardTitle: { fontWeight: 'bold', marginBottom: 12 },
+
+  label: { color: '#555', marginBottom: 6 },
+  labelGap: { marginTop: 14 },
+
+  dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#888',
+    borderRadius: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    backgroundColor: '#fff',
   },
-  planTitle: {
-    fontWeight: '600',
+  dropdownText: { fontSize: 16, color: '#222', flex: 1 },
+  dropdownArrow: { fontSize: 14, color: '#888', marginLeft: 8 },
+  menuItemSelected: { color: '#6c63ff', fontWeight: '700' },
+
+  input: { backgroundColor: '#fff' },
+
+  savedRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1, borderColor: '#ccc', borderRadius: 4,
+    paddingHorizontal: 14, paddingVertical: 4,
+    backgroundColor: '#f9f9f9',
   },
-  recommendedBadge: {
-    backgroundColor: '#6c63ff',
-    height: 24,
+  savedText: { color: '#888', fontSize: 15, letterSpacing: 1 },
+
+  hint: { color: '#999', marginTop: 6 },
+  warning: { color: '#f59e0b', fontSize: 12, marginTop: 4 },
+
+  guideBox: {
+    backgroundColor: '#ede9ff', borderRadius: 10,
+    padding: 12, marginTop: 10, gap: 3,
   },
-  recommendedBadgeText: {
-    color: '#fff',
-    fontSize: 11,
-  },
-  planDesc: {
-    marginBottom: 12,
-    lineHeight: 22,
-  },
-  planNote: {
-    opacity: 0.6,
-    lineHeight: 20,
-  },
-  button: {
-    marginTop: 4,
-  },
-  advancedToggle: {
-    alignItems: 'center',
-    paddingVertical: 12,
-    marginBottom: 8,
-  },
-  advancedToggleText: {
-    color: '#6c63ff',
-    fontWeight: '500',
-  },
+  guideTitle: { color: '#6c63ff', fontWeight: '700', marginBottom: 4 },
+  guideStep: { color: '#444', lineHeight: 20 },
+  guideNote: { color: '#6c63ff', fontWeight: '500', marginTop: 6 },
+
+  button: { marginTop: 20, borderRadius: 8 },
+  buttonContent: { paddingVertical: 6 },
+
+  privacyLink: { alignItems: 'center', marginTop: 16 },
+  privacyLinkText: { color: '#aaa', textDecorationLine: 'underline' },
 });

@@ -8,7 +8,6 @@ import { STRINGS } from '../i18n/strings';
 
 // Screens
 import PlanSelectionScreen from '../screens/PlanSelectionScreen';
-import ApiKeySetupScreen from '../screens/ApiKeySetupScreen';
 import HomeScreen from '../screens/HomeScreen';
 import UploadScreen from '../screens/UploadScreen';
 import StudyNotesScreen from '../screens/StudyNotesScreen';
@@ -20,7 +19,6 @@ import ReviewConceptScreen from '../screens/ReviewConceptScreen';
 
 export type RootStackParamList = {
   PlanSelection: undefined;
-  ApiKeySetup: undefined;
   Home: undefined;
   Upload: undefined;
   StudyNotes: { sessionId: string };
@@ -34,7 +32,7 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const [initialRoute, setInitialRoute] = useState<'PlanSelection' | 'ApiKeySetup' | 'Home' | null>(null);
+  const [initialRoute, setInitialRoute] = useState<'PlanSelection' | 'Home' | null>(null);
   const { lang } = useLanguageStore();
   const s = STRINGS[lang];
 
@@ -46,12 +44,12 @@ export default function AppNavigator() {
         return;
       }
       const plan = await getPlan();
-      if (plan !== 'free') {
-        const hasKey = await hasApiKey();
-        setInitialRoute(hasKey ? 'Home' : 'ApiKeySetup');
-      } else {
-        setInitialRoute('Home');
+      // 유료 플랜인데 API 키가 없으면 다시 설정 화면으로
+      if (plan !== 'free' && !(await hasApiKey())) {
+        setInitialRoute('PlanSelection');
+        return;
       }
+      setInitialRoute('Home');
     })();
   }, []);
 
@@ -77,11 +75,6 @@ export default function AppNavigator() {
           name="PlanSelection"
           component={PlanSelectionScreen}
           options={{ title: s.navGetStarted, headerShown: false }}
-        />
-        <Stack.Screen
-          name="ApiKeySetup"
-          component={ApiKeySetupScreen}
-          options={{ title: s.navSetup, headerShown: false }}
         />
         <Stack.Screen
           name="Home"
