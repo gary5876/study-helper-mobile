@@ -24,6 +24,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 - [x] 프로바이더별 AI 모델 선택 (`modelStore`, SecureStore 영속화, `options.model`로 백엔드 전달)
 - [x] Jest 단위 테스트 27개
 - [x] Maestro E2E 테스트 3개 시나리오
+- [x] **UI 색상 대비 개선** — FillBlankScreen placeholder(`#aaa`), QuestionCard dimmed 선택지 opacity·텍스트 가독성 향상, WrongAnswerScreen 오답(`#c62828`) / 정답(`#2e7d32`) 색상 WCAG AA 기준 충족
 
 ### 미구현 (추후 예정)
 

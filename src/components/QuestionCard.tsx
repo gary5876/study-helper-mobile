@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   },
   optionDimmed: {
     flexDirection: 'row', alignItems: 'center', padding: 14,
-    borderRadius: 12, backgroundColor: '#fafafa', borderWidth: 2, borderColor: '#e0e0e0', opacity: 0.5,
+    borderRadius: 12, backgroundColor: '#fafafa', borderWidth: 2, borderColor: '#e0e0e0', opacity: 0.65,
   },
   optionLabel: {
     width: 28, height: 28, borderRadius: 14, backgroundColor: '#f5f5f5',
@@ -172,5 +172,5 @@ const styles = StyleSheet.create({
   optionTextSelected: { flex: 1, color: '#6c63ff', fontSize: 14, lineHeight: 20, fontWeight: '500' },
   optionTextCorrect: { flex: 1, color: '#4caf50', fontSize: 14, lineHeight: 20, fontWeight: '600' },
   optionTextWrong: { flex: 1, color: '#e53935', fontSize: 14, lineHeight: 20 },
-  optionTextDimmed: { flex: 1, color: '#bbb', fontSize: 14, lineHeight: 20 },
+  optionTextDimmed: { flex: 1, color: '#888', fontSize: 14, lineHeight: 20 },
 } as any);

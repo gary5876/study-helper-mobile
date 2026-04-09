@@ -154,6 +154,7 @@ export default function FillBlankScreen({ route, navigation }: Props) {
               value={userInput}
               onChangeText={setUserInput}
               placeholder={s.fillPlaceholder}
+              placeholderTextColor="#aaa"
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
