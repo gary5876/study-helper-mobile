@@ -6,6 +6,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent, createAttempt, saveAnswer, completeAttempt } from '../services/storage';
 import { MCQQuestion } from '../services/api';
+import { filterByMode } from '../services/scheduler';
 import { useSessionStore } from '../store/sessionStore';
 import { useLanguageStore } from '../store/languageStore';
 import { STRINGS } from '../i18n/strings';
@@ -15,7 +16,7 @@ import ProgressBar from '../components/ProgressBar';
 type Props = NativeStackScreenProps<RootStackParamList, 'MCQ'>;
 
 export default function MCQScreen({ route, navigation }: Props) {
-  const { sessionId, retryIds } = route.params;
+  const { sessionId, mode, retryIds } = route.params;
   const [questions, setQuestions] = useState<MCQQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const { startQuiz, recordAnswer, advanceQuestion, finishQuiz, quiz } = useSessionStore();
@@ -33,9 +34,14 @@ export default function MCQScreen({ route, navigation }: Props) {
         if (!row) { setLoading(false); return; }
 
         let qs: MCQQuestion[] = JSON.parse(row.mcq_json);
+
+        // Apply retry filter first (retry mode ignores study mode filter)
         if (retryIds && retryIds.length > 0) {
           qs = qs.filter((q) => retryIds.includes(q.id));
+        } else {
+          qs = filterByMode(qs, mode);
         }
+
         setQuestions(qs);
 
         const aId = await createAttempt({ session_id: sessionId, attempt_type: 'mcq' });
@@ -74,9 +80,9 @@ export default function MCQScreen({ route, navigation }: Props) {
         const pct = total > 0 ? (correct / total) * 100 : 0;
         await completeAttempt(attemptId, pct);
         finishQuiz();
-        navigation.replace('FillBlank', { sessionId });
+        navigation.replace('FillBlank', { sessionId, mode });
       } catch (err: any) {
-        navigation.replace('FillBlank', { sessionId });
+        navigation.replace('FillBlank', { sessionId, mode });
       }
     } else {
       advanceQuestion();

@@ -20,6 +20,20 @@ interface MCQCardProps {
 
 type Props = MCQCardProps;
 
+// Level 1→faint blue, 2→blue-green, 3→amber, 4→orange, 5→red
+const LEVEL_COLORS: Record<number, { bg: string; text: string }> = {
+  1: { bg: '#e8f0fe', text: '#3f51b5' },
+  2: { bg: '#e0f2f1', text: '#00796b' },
+  3: { bg: '#fff8e1', text: '#f57f17' },
+  4: { bg: '#fff3e0', text: '#e65100' },
+  5: { bg: '#fce4ec', text: '#c62828' },
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  concept: '개념',
+  application: '실습',
+};
+
 export default function QuestionCard({ question, onAnswer, onNext, isLast }: Props) {
   const [selected, setSelected] = useState<Option | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -28,6 +42,7 @@ export default function QuestionCard({ question, onAnswer, onNext, isLast }: Pro
 
   const mcq = question as MCQQuestion;
   const options: Option[] = ['A', 'B', 'C', 'D'];
+  const levelColor = LEVEL_COLORS[mcq.level] ?? LEVEL_COLORS[3];
 
   async function handleSelect(opt: Option) {
     if (submitted) return;
@@ -65,9 +80,14 @@ export default function QuestionCard({ question, onAnswer, onNext, isLast }: Pro
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Difficulty badge */}
-      <View style={[styles.difficultyBadge, styles[`diff_${mcq.difficulty}`]]}>
-        <Text style={styles.difficultyText}>{mcq.difficulty}</Text>
+      {/* Badge row: level + question type */}
+      <View style={styles.badgeRow}>
+        <View style={[styles.badge, { backgroundColor: levelColor.bg }]}>
+          <Text style={[styles.badgeText, { color: levelColor.text }]}>Lv.{mcq.level}</Text>
+        </View>
+        <View style={styles.typeBadge}>
+          <Text style={styles.typeBadgeText}>{TYPE_LABEL[mcq.question_type] ?? mcq.question_type}</Text>
+        </View>
       </View>
 
       {/* Question */}
@@ -110,14 +130,17 @@ export default function QuestionCard({ question, onAnswer, onNext, isLast }: Pro
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, gap: 16, paddingBottom: 32 },
-  difficultyBadge: {
-    alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3,
+  badgeRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  badge: {
+    paddingHorizontal: 10, paddingVertical: 3,
     borderRadius: 12,
   },
-  diff_easy: { backgroundColor: '#e8f5e9' },
-  diff_medium: { backgroundColor: '#fff3e0' },
-  diff_hard: { backgroundColor: '#ffebee' },
-  difficultyText: { fontSize: 12, fontWeight: '600', textTransform: 'capitalize', color: '#555' },
+  badgeText: { fontSize: 12, fontWeight: '700' },
+  typeBadge: {
+    paddingHorizontal: 10, paddingVertical: 3,
+    borderRadius: 12, backgroundColor: '#f3e5f5',
+  },
+  typeBadgeText: { fontSize: 12, fontWeight: '600', color: '#7b1fa2' },
   question: { fontSize: 17, lineHeight: 26, color: '#333', fontWeight: '600' },
   options: { gap: 10 },
   option: {

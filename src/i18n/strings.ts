@@ -12,6 +12,21 @@ export const STRINGS = {
     navResults: '결과',
     navReviewMistakes: '오답 복습',
     navConceptReview: '개념 복습',
+    navQuizMode: '학습 모드 선택',
+
+    // QuizModeScreen
+    modeSelectTitle: '학습 모드를 선택하세요',
+    modeSelectSubtitle: '목적에 맞는 난이도로 문제를 풀어보세요.',
+    modeLight: '가볍게 공부',
+    modeLightDesc: '기초 개념을 확인하는 부담 없는 문제입니다. 처음 접하는 내용이거나 빠르게 훑을 때 적합합니다.',
+    modeExam: '시험 대비',
+    modeExamDesc: '실전 시험 수준의 문제입니다. 개념 적용부터 복합 분석까지 골고루 출제됩니다.',
+    modeMax: '최고난도',
+    modeMaxDesc: '변별력 있는 최상위 문제만 모았습니다. 비판적 사고와 심화 이해가 필요합니다.',
+
+    // Question type labels
+    qtConcept: '개념',
+    qtApplication: '실습',
 
     // HomeScreen
     homeNoSessions: '아직 세션이 없어요',
@@ -131,6 +146,21 @@ export const STRINGS = {
     navResults: 'Results',
     navReviewMistakes: 'Review Mistakes',
     navConceptReview: 'Concept Review',
+    navQuizMode: 'Select Study Mode',
+
+    // QuizModeScreen
+    modeSelectTitle: 'Choose a Study Mode',
+    modeSelectSubtitle: 'Pick the difficulty that matches your goal.',
+    modeLight: 'Light Study',
+    modeLightDesc: 'Easy recall and comprehension questions. Great for a first pass or a quick review.',
+    modeExam: 'Exam Prep',
+    modeExamDesc: 'Exam-level questions ranging from application to complex analysis. The default mode for serious study.',
+    modeMax: 'Maximum Difficulty',
+    modeMaxDesc: 'Only the hardest questions. Requires critical thinking, synthesis, and deep understanding.',
+
+    // Question type labels
+    qtConcept: 'Concept',
+    qtApplication: 'Application',
 
     // HomeScreen
     homeNoSessions: 'No sessions yet',

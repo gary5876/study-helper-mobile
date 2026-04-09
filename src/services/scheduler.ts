@@ -84,22 +84,60 @@ export function describeInterval(intervalDays: number): string {
   return `in ${Math.round(intervalDays / 30)} months`;
 }
 
+import type { StudyMode, MCQQuestion, FillQuestion } from './api';
+
+/** Level ranges per study mode. */
+const MODE_LEVELS: Record<StudyMode, number[]> = {
+  light: [1, 2],
+  exam:  [3, 4, 5],
+  max:   [5],
+};
+
+/** Minimum question count before a mode falls back to adjacent levels. */
+const MODE_MIN_COUNT = 3;
+
 /**
- * Determine difficulty weight distribution for next quiz attempt.
- * Returns { easy, medium, hard } proportions (sum = 1.0).
+ * Filter a question list to those matching the selected study mode.
+ * Falls back to adjacent levels when the strict set has fewer than MODE_MIN_COUNT items.
  */
-export function getDifficultyWeights(lastScorePct: number): {
-  easy: number;
-  medium: number;
-  hard: number;
+export function filterByMode<T extends MCQQuestion | FillQuestion>(
+  questions: T[],
+  mode: StudyMode,
+): T[] {
+  const primary = MODE_LEVELS[mode];
+  const filtered = questions.filter((q) => primary.includes(q.level));
+
+  if (filtered.length >= MODE_MIN_COUNT) return filtered;
+
+  // Fallback: expand to next adjacent level(s)
+  if (mode === 'max') {
+    // L5 insufficient → include L4+L5
+    return questions.filter((q) => q.level >= 4);
+  }
+  if (mode === 'light') {
+    // L1-L2 insufficient → include up to L3
+    return questions.filter((q) => q.level <= 3);
+  }
+  // exam mode: all L3-L5, no further fallback needed
+  return filtered;
+}
+
+/**
+ * Determine level weight distribution for adaptive retry sessions.
+ * Returns proportions for levels 3, 4, 5 (sum = 1.0).
+ */
+export function getLevelWeights(lastScorePct: number): {
+  level3: number;
+  level4: number;
+  level5: number;
 } {
   if (lastScorePct >= 85) {
-    return { easy: 0.15, medium: 0.45, hard: 0.40 };
+    return { level3: 0.00, level4: 0.35, level5: 0.65 };
   }
   if (lastScorePct <= 50) {
-    return { easy: 0.50, medium: 0.40, hard: 0.10 };
+    return { level3: 0.35, level4: 0.50, level5: 0.15 };
   }
-  return { easy: 0.30, medium: 0.50, hard: 0.20 };
+  return { level3: 0.15, level4: 0.50, level5: 0.35 };
 }
 
 /**

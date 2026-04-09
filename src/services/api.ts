@@ -66,6 +66,9 @@ export interface GlossaryEntry {
   brief_def: string;
 }
 
+export type StudyMode = 'light' | 'exam' | 'max';
+export type QuestionType = 'concept' | 'application';
+
 export interface MCQQuestion {
   id: string;
   question: string;
@@ -73,7 +76,8 @@ export interface MCQQuestion {
   correct_answer: 'A' | 'B' | 'C' | 'D';
   explanation: string;
   concept_id: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  level: number;          // 1–5 (replaces difficulty)
+  question_type: QuestionType;
 }
 
 export interface FillQuestion {
@@ -83,6 +87,8 @@ export interface FillQuestion {
   acceptable_variants: string[];
   hint: string;
   concept_id: string;
+  level: number;          // 1–5
+  question_type: QuestionType;
 }
 
 export interface ContentMetadata {

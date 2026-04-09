@@ -143,7 +143,7 @@ export default function StudyNotesScreen({ route, navigation }: Props) {
       <View style={styles.fabContainer}>
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('MCQ', { sessionId })}
+          onPress={() => navigation.navigate('QuizMode', { sessionId })}
           style={styles.startButton}
           contentStyle={styles.startButtonContent}
           icon="pencil"

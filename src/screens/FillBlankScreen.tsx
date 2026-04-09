@@ -8,6 +8,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { getStudyContent, createAttempt, saveAnswer, completeAttempt } from '../services/storage';
 import { FillQuestion } from '../services/api';
+import { filterByMode } from '../services/scheduler';
 import { useSessionStore } from '../store/sessionStore';
 import { useLanguageStore } from '../store/languageStore';
 import { STRINGS } from '../i18n/strings';
@@ -25,7 +26,7 @@ type FeedbackState = {
 };
 
 export default function FillBlankScreen({ route, navigation }: Props) {
-  const { sessionId } = route.params;
+  const { sessionId, mode } = route.params;
   const [questions, setQuestions] = useState<FillQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -45,7 +46,8 @@ export default function FillBlankScreen({ route, navigation }: Props) {
       try {
         const row = await getStudyContent(sessionId);
         if (!row) { setLoading(false); return; }
-        const qs: FillQuestion[] = JSON.parse(row.fill_json);
+        const allQs: FillQuestion[] = JSON.parse(row.fill_json);
+        const qs = filterByMode(allQs, mode);
         setQuestions(qs);
         const aId = await createAttempt({ session_id: sessionId, attempt_type: 'fill' });
         setAttemptId(aId);

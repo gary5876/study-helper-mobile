@@ -11,19 +11,22 @@ import PlanSelectionScreen from '../screens/PlanSelectionScreen';
 import HomeScreen from '../screens/HomeScreen';
 import UploadScreen from '../screens/UploadScreen';
 import StudyNotesScreen from '../screens/StudyNotesScreen';
+import QuizModeScreen from '../screens/QuizModeScreen';
 import MCQScreen from '../screens/MCQScreen';
 import FillBlankScreen from '../screens/FillBlankScreen';
 import ScoreScreen from '../screens/ScoreScreen';
 import WrongAnswerScreen from '../screens/WrongAnswerScreen';
 import ReviewConceptScreen from '../screens/ReviewConceptScreen';
+import type { StudyMode } from '../services/api';
 
 export type RootStackParamList = {
   PlanSelection: undefined;
   Home: undefined;
   Upload: undefined;
   StudyNotes: { sessionId: string };
-  MCQ: { sessionId: string; retryIds?: string[] };
-  FillBlank: { sessionId: string };
+  QuizMode: { sessionId: string };
+  MCQ: { sessionId: string; mode: StudyMode; retryIds?: string[] };
+  FillBlank: { sessionId: string; mode: StudyMode };
   Score: { attemptId: string; sessionId: string };
   WrongAnswer: { attemptId: string; sessionId: string };
   ReviewConcept: { conceptId: string; sessionId: string };
@@ -83,6 +86,7 @@ export default function AppNavigator() {
         />
         <Stack.Screen name="Upload" component={UploadScreen} options={{ title: s.navNewSession }} />
         <Stack.Screen name="StudyNotes" component={StudyNotesScreen} options={{ title: s.navStudyNotes }} />
+        <Stack.Screen name="QuizMode" component={QuizModeScreen} options={{ title: s.navQuizMode }} />
         <Stack.Screen name="MCQ" component={MCQScreen} options={{ title: s.navMCQ }} />
         <Stack.Screen name="FillBlank" component={FillBlankScreen} options={{ title: s.navFillBlank }} />
         <Stack.Screen name="Score" component={ScoreScreen} options={{ title: s.navResults }} />
