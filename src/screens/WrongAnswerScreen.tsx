@@ -3,13 +3,13 @@ import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Card, Button, Chip, Divider } from 'react-native-paper';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { getWrongAnswers, scheduleReview } from '../services/storage';
+import { getWrongAnswers, getReviewSchedule, scheduleReview } from '../services/storage';
 import { MCQQuestion, FillQuestion } from '../services/api';
 import { useSessionStore } from '../store/sessionStore';
 import { useLanguageStore } from '../store/languageStore';
 import { STRINGS } from '../i18n/strings';
 import {
-  actionToQuality, computeNextState, INITIAL_SM2_STATE,
+  actionToQuality, computeNextState, INITIAL_SM2_STATE, SM2State,
 } from '../services/scheduler';
 import { AnswerRow } from '../db/schema';
 
@@ -66,20 +66,33 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
 
     for (const item of items) {
       if (!item.action || !item.question) continue;
-      const quality = actionToQuality(item.action);
-      const nextState = computeNextState(INITIAL_SM2_STATE, quality);
-      const qType = studyContent.mcq_questions.find((q) => q.id === item.question!.id)
-        ? 'mcq'
-        : 'fill';
+      try {
+        const quality = actionToQuality(item.action);
+        // Load existing SM2 state instead of always resetting to initial
+        const existing = await getReviewSchedule(sessionId, item.question.id);
+        const currentState: SM2State = existing
+          ? {
+              interval: existing.interval_days,
+              easeFactor: existing.ease_factor,
+              repetitions: existing.repetitions,
+            }
+          : INITIAL_SM2_STATE;
+        const nextState = computeNextState(currentState, quality);
+        const qType = studyContent.mcq_questions.find((q) => q.id === item.question!.id)
+          ? 'mcq'
+          : 'fill';
 
-      await scheduleReview({
-        session_id: sessionId,
-        question_id: item.question.id,
-        question_type: qType,
-        interval_days: nextState.interval,
-        ease_factor: nextState.easeFactor,
-        repetitions: nextState.repetitions,
-      });
+        await scheduleReview({
+          session_id: sessionId,
+          question_id: item.question.id,
+          question_type: qType,
+          interval_days: nextState.interval,
+          ease_factor: nextState.easeFactor,
+          repetitions: nextState.repetitions,
+        });
+      } catch (err) {
+        console.error(`Failed to schedule review for question ${item.question.id}:`, err);
+      }
     }
 
     const retryIds = items

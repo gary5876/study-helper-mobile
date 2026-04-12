@@ -13,6 +13,7 @@ export const STRINGS = {
     navReviewMistakes: '오답 복습',
     navConceptReview: '개념 복습',
     navQuizMode: '학습 모드 선택',
+    navPrivacy: '개인정보처리방침',
 
     // QuizModeScreen
     modeSelectTitle: '학습 모드를 선택하세요',
@@ -134,6 +135,53 @@ export const STRINGS = {
     // ModelSelection (ApiKeySetupScreen)
     modelSelectLabel: '모델 선택',
     modelSelectDefault: '(기본값)',
+
+    // PrivacyScreen
+    privacyTitle: '개인정보처리방침',
+    privacyEffectiveDate: '시행일: 2026년 4월 8일',
+    privacyServiceName: '공부 도우미 (Study Helper)',
+    privacyS1Title: '1. 총칙',
+    privacyS1Body: '공부 도우미 (Study Helper)(이하 "서비스")는 사용자의 개인정보를 소중히 여기며, 「개인정보 보호법」 및 관련 법령을 준수합니다. 본 방침은 서비스가 어떤 정보를 수집·이용·보관·파기하는지 설명합니다.',
+    privacyS2Title: '2. 수집하는 정보',
+    privacyS2Items: [
+      '이메일 주소 — 회원가입/소셜 로그인 → 계정 식별 및 로그인',
+      'IP 주소 — 서버 자동 수집 → 어뷰징 방지(Rate Limiting)',
+      '업로드 PDF 텍스트 — 사용자 직접 제공 → AI 학습 자료 생성',
+      'API 키 (선택) — 사용자 직접 입력 (기기 저장) → AI 서비스 호출',
+      '학습 기록 — 앱 내 자동 생성 → 간격 반복 복습 스케줄 관리',
+    ],
+    privacyS2Note: 'API 키는 기기의 SecureStore에만 저장되며, 서버는 요청 처리 후 즉시 파기합니다.',
+    privacyS3Title: '3. 개인정보의 이용 목적',
+    privacyS3Items: [
+      '서비스 제공 및 AI 학습 자료 생성',
+      '비정상적인 접근 탐지 및 서비스 안정성 유지',
+      '서비스 개선을 위한 익명 통계 분석',
+    ],
+    privacyS4Title: '4. 제3자 제공',
+    privacyS4Body: '업로드된 PDF 텍스트는 사용자가 선택한 AI 서비스(Anthropic, OpenAI, TimelyGPT)의 서버로 전송되어 학습 자료 생성에 사용됩니다. 각 서비스의 개인정보처리방침이 적용됩니다.',
+    privacyS4Note: '위 목적 외 제3자 제공은 하지 않습니다.',
+    privacyS5Title: '5. 보유 및 파기',
+    privacyS5Items: [
+      '계정 정보 — 탈퇴 요청 시 즉시 DB 영구 삭제',
+      'PDF 텍스트 (세션) — 생성 완료 후 2시간, Redis TTL 자동 만료',
+      '생성된 문제 (문제은행) — 서비스 운영 기간, 서비스 종료 시 삭제',
+      '서버 로그 (IP 포함) — 최대 30일, 자동 롤오버 삭제',
+    ],
+    privacyS6Title: '6. 사용자 권리',
+    privacyS6Body: '사용자는 언제든지 개인정보 열람, 정정, 삭제, 처리 정지를 요청할 수 있습니다. 계정 탈퇴는 앱 내 설정에서 가능하며, 탈퇴 시 개인정보는 즉시 파기됩니다.',
+    privacyS7Title: '7. 보안 조치',
+    privacyS7Items: [
+      'API 키: 기기 내 암호화 저장 (Expo SecureStore), 서버 비저장',
+      '통신: HTTPS 암호화',
+      '접근 제어: IP당 분당 30회 Rate Limiting',
+      '로그: API 키 등 민감 정보 마스킹 처리',
+    ],
+    privacyS8Title: '8. 쿠키 및 추적',
+    privacyS8Body: '서비스는 로그인 세션 유지를 위해 Supabase 인증 쿠키를 사용합니다. 별도의 광고 추적 쿠키는 사용하지 않습니다.',
+    privacyS9Title: '9. 방침 변경',
+    privacyS9Body: '본 방침이 변경될 경우 시행 7일 전에 앱 공지 또는 이 페이지를 통해 안내합니다.',
+    privacyS10Title: '10. 문의',
+    privacyS10Body: '개인정보 관련 문의사항은 GitHub Issues를 통해 접수해 주세요.',
   },
   en: {
     // Navigation
@@ -147,6 +195,7 @@ export const STRINGS = {
     navReviewMistakes: 'Review Mistakes',
     navConceptReview: 'Concept Review',
     navQuizMode: 'Select Study Mode',
+    navPrivacy: 'Privacy Policy',
 
     // QuizModeScreen
     modeSelectTitle: 'Choose a Study Mode',
@@ -268,6 +317,53 @@ export const STRINGS = {
     // ModelSelection (ApiKeySetupScreen)
     modelSelectLabel: 'Select Model',
     modelSelectDefault: '(default)',
+
+    // PrivacyScreen
+    privacyTitle: 'Privacy Policy',
+    privacyEffectiveDate: 'Effective: April 8, 2026',
+    privacyServiceName: 'Study Helper',
+    privacyS1Title: '1. General',
+    privacyS1Body: 'Study Helper ("Service") values your privacy and complies with applicable data protection laws. This policy explains what information we collect, use, store, and delete.',
+    privacyS2Title: '2. Information Collected',
+    privacyS2Items: [
+      'Email address — Sign-up / Social login → Account identification',
+      'IP address — Automatic server collection → Abuse prevention (Rate Limiting)',
+      'Uploaded PDF text — User-provided → AI study material generation',
+      'API Key (optional) — User input (stored on device) → AI service calls',
+      'Study records — Auto-generated in app → Spaced repetition scheduling',
+    ],
+    privacyS2Note: 'API keys are stored only in the device SecureStore. The server discards them immediately after processing.',
+    privacyS3Title: '3. Purpose of Use',
+    privacyS3Items: [
+      'Providing the service and generating AI study materials',
+      'Detecting abnormal access and maintaining service stability',
+      'Anonymous statistical analysis for service improvement',
+    ],
+    privacyS4Title: '4. Third-Party Sharing',
+    privacyS4Body: 'Uploaded PDF text is sent to the AI service selected by the user (Anthropic, OpenAI, TimelyGPT) for study material generation. Each service\'s privacy policy applies.',
+    privacyS4Note: 'We do not share data with third parties for purposes other than the above.',
+    privacyS5Title: '5. Retention & Deletion',
+    privacyS5Items: [
+      'Account info — Immediately upon withdrawal request, permanently deleted from DB',
+      'PDF text (session) — 2 hours after generation, auto-expired via Redis TTL',
+      'Generated questions (question bank) — During service operation, deleted when service ends',
+      'Server logs (incl. IP) — Max 30 days, auto-rotated',
+    ],
+    privacyS6Title: '6. Your Rights',
+    privacyS6Body: 'You may request access, correction, deletion, or suspension of processing at any time. Account deletion is available in app settings; all personal data is destroyed immediately.',
+    privacyS7Title: '7. Security Measures',
+    privacyS7Items: [
+      'API keys: Encrypted on-device storage (Expo SecureStore), not stored on server',
+      'Communication: HTTPS encryption',
+      'Access control: 30 requests per minute per IP (Rate Limiting)',
+      'Logs: Sensitive information masked',
+    ],
+    privacyS8Title: '8. Cookies & Tracking',
+    privacyS8Body: 'The service uses Supabase authentication cookies for session management. No advertising tracking cookies are used.',
+    privacyS9Title: '9. Policy Changes',
+    privacyS9Body: 'Changes to this policy will be announced via the app or this page at least 7 days before taking effect.',
+    privacyS10Title: '10. Contact',
+    privacyS10Body: 'For privacy-related inquiries, please submit through GitHub Issues.',
   },
 } as const;
 

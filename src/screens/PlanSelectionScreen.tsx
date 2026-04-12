@@ -254,7 +254,7 @@ export default function PlanSelectionScreen({ navigation }: Props) {
         </Card>
 
         <TouchableOpacity
-          onPress={() => Linking.openURL('https://study-helper-web.vercel.app/privacy')}
+          onPress={() => navigation.navigate('Privacy')}
           style={styles.privacyLink}
         >
           <Text variant="bodySmall" style={styles.privacyLinkText}>개인정보처리방침</Text>

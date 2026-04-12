@@ -17,6 +17,7 @@ import FillBlankScreen from '../screens/FillBlankScreen';
 import ScoreScreen from '../screens/ScoreScreen';
 import WrongAnswerScreen from '../screens/WrongAnswerScreen';
 import ReviewConceptScreen from '../screens/ReviewConceptScreen';
+import PrivacyScreen from '../screens/PrivacyScreen';
 import type { StudyMode } from '../services/api';
 
 export type RootStackParamList = {
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   Score: { attemptId: string; sessionId: string };
   WrongAnswer: { attemptId: string; sessionId: string };
   ReviewConcept: { conceptId: string; sessionId: string };
+  Privacy: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -92,6 +94,7 @@ export default function AppNavigator() {
         <Stack.Screen name="Score" component={ScoreScreen} options={{ title: s.navResults }} />
         <Stack.Screen name="WrongAnswer" component={WrongAnswerScreen} options={{ title: s.navReviewMistakes }} />
         <Stack.Screen name="ReviewConcept" component={ReviewConceptScreen} options={{ title: s.navConceptReview }} />
+        <Stack.Screen name="Privacy" component={PrivacyScreen} options={{ title: s.privacyTitle }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

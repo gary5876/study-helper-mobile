@@ -8,7 +8,7 @@ import {
   actionToQuality,
   fuzzyMatch,
   scoreToGrade,
-  getDifficultyWeights,
+  getLevelWeights,
   describeInterval,
 } from '../services/scheduler';
 
@@ -112,20 +112,20 @@ describe('scoreToGrade', () => {
 // getDifficultyWeights
 // ─────────────────────────────────────────
 
-describe('getDifficultyWeights', () => {
-  test('high score → more hard questions', () => {
-    const w = getDifficultyWeights(90);
-    expect(w.hard).toBeGreaterThan(0.3);
+describe('getLevelWeights', () => {
+  test('high score → more level5 questions', () => {
+    const w = getLevelWeights(90);
+    expect(w.level5).toBeGreaterThan(0.3);
   });
 
-  test('low score → more easy questions', () => {
-    const w = getDifficultyWeights(40);
-    expect(w.easy).toBeGreaterThanOrEqual(0.5);
+  test('low score → more level3 questions', () => {
+    const w = getLevelWeights(40);
+    expect(w.level3).toBeGreaterThanOrEqual(0.35);
   });
 
   test('weights sum to 1', () => {
-    const w = getDifficultyWeights(70);
-    expect(w.easy + w.medium + w.hard).toBeCloseTo(1.0);
+    const w = getLevelWeights(70);
+    expect(w.level3 + w.level4 + w.level5).toBeCloseTo(1.0);
   });
 });
 

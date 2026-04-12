@@ -5,7 +5,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-04-09)
+## 현재 상태 (2026-04-12)
 
 ### 완성된 화면 및 기능
 
@@ -25,6 +25,9 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 - [x] Jest 단위 테스트 27개
 - [x] Maestro E2E 테스트 3개 시나리오
 - [x] **UI 색상 대비 개선** — FillBlankScreen placeholder(`#aaa`), QuestionCard dimmed 선택지 opacity·텍스트 가독성 향상, WrongAnswerScreen 오답(`#c62828`) / 정답(`#2e7d32`) 색상 WCAG AA 기준 충족
+- [x] **SM-2 버그 수정** — WrongAnswerScreen에서 기존 복습 상태를 불러와서 SM-2 계산하도록 수정 (`getReviewSchedule()` 함수 추가). 이전에는 항상 초기 상태에서 계산하여 간격 반복이 실제로 작동하지 않았음
+- [x] **개인정보처리방침 화면** — 앱 내 PrivacyScreen 추가, 한/영 다국어 지원. PlanSelectionScreen에서 외부 URL 대신 앱 내 화면으로 연결
+- [x] **테스트 수정** — scheduler.test.ts의 `getDifficultyWeights` → `getLevelWeights` import 오류 수정
 
 ### 미구현 (추후 예정)
 

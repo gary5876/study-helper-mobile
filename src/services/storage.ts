@@ -262,6 +262,17 @@ export async function scheduleReview(params: {
   }
 }
 
+export async function getReviewSchedule(
+  sessionId: string,
+  questionId: string,
+): Promise<ReviewScheduleRow | null> {
+  const db = getDb();
+  return db.getFirstAsync<ReviewScheduleRow>(
+    `SELECT * FROM review_schedule WHERE session_id = ? AND question_id = ?`,
+    [sessionId, questionId]
+  );
+}
+
 export async function getDueReviews(): Promise<ReviewScheduleRow[]> {
   const db = getDb();
   return db.getAllAsync<ReviewScheduleRow>(
