@@ -5,7 +5,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-04-12)
+## 현재 상태 (2026-04-14)
 
 ### 완성된 화면 및 기능
 
@@ -28,6 +28,8 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 - [x] **SM-2 버그 수정** — WrongAnswerScreen에서 기존 복습 상태를 불러와서 SM-2 계산하도록 수정 (`getReviewSchedule()` 함수 추가). 이전에는 항상 초기 상태에서 계산하여 간격 반복이 실제로 작동하지 않았음
 - [x] **개인정보처리방침 화면** — 앱 내 PrivacyScreen 추가, 한/영 다국어 지원. PlanSelectionScreen에서 외부 URL 대신 앱 내 화면으로 연결
 - [x] **테스트 수정** — scheduler.test.ts의 `getDifficultyWeights` → `getLevelWeights` import 오류 수정
+- [x] **API 에러 로그·URL 노출 `__DEV__` 제한** (2026-04-14, `63c92b5`) — `src/services/api.ts`에서 baseURL·스택 등 디버깅 정보 출력을 `__DEV__` 가드 안에서만 수행. 프로덕션 빌드에서는 사용자 친화 메시지만 노출. `.env.example` 갱신
+- [x] **백엔드 세션 ID 단일화와 호환 확인** (2026-04-14) — 백엔드에서 `SessionCreate`에 optional `id` 필드를 추가하고 `/upload`·`/generate`가 `user_sessions` 행을 upsert/동기화하도록 바뀜. 모바일은 `/upload` 응답의 `session_id`를 그대로 받아 쓰는 기존 흐름이 변경 없이 유지되고, `/user/sync` 스키마도 하위 호환이라 모바일 코드 변경 없음
 
 ### 미구현 (추후 예정)
 
