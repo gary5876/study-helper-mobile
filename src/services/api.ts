@@ -167,7 +167,9 @@ async function createClient() {
       return (isNetworkError || isServerError) && !isRateLimit;
     },
     onRetry: (retryCount, error) => {
-      console.warn(`[API] Retry #${retryCount} after error: ${error.message}`);
+      if (__DEV__) {
+        console.warn(`[API] Retry #${retryCount} after error: ${error.message}`);
+      }
     },
   });
 
@@ -180,10 +182,13 @@ async function createClient() {
         err.response?.data?.message ||
         err.message ||
         'Unknown error';
-      const attemptedUrl = err.config?.baseURL
-        ? `${err.config.baseURL}${err.config.url ?? ''}`
-        : 'unknown URL';
-      return Promise.reject(new Error(`${detail} (tried: ${attemptedUrl})`));
+      if (__DEV__) {
+        const attemptedUrl = err.config?.baseURL
+          ? `${err.config.baseURL}${err.config.url ?? ''}`
+          : 'unknown URL';
+        console.error(`[API Error] ${detail} (tried: ${attemptedUrl})`);
+      }
+      return Promise.reject(new Error(detail));
     }
   );
   return client;
