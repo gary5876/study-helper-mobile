@@ -37,6 +37,9 @@ export const STRINGS = {
     homeStatusReady: '준비됨',
     homeStatusPending: '처리 중',
     homeStatusFailed: '실패',
+    homeDeleteTitle: '세션 삭제',
+    homeDeleteMessage: '이 세션과 관련 복습 일정을 삭제하시겠습니까?',
+    homeDelete: '삭제',
 
     // UploadScreen
     uploadTitle: 'PDF 업로드',
@@ -217,6 +220,9 @@ export const STRINGS = {
     homeNewSession: 'New Session',
     homeDueReview: 'due for review',
     homeStatusReady: 'ready',
+    homeDeleteTitle: 'Delete Session',
+    homeDeleteMessage: 'Delete this session and its review schedule?',
+    homeDelete: 'Delete',
     homeStatusPending: 'pending',
     homeStatusFailed: 'failed',
 

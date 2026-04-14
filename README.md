@@ -30,6 +30,7 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 - [x] **테스트 수정** — scheduler.test.ts의 `getDifficultyWeights` → `getLevelWeights` import 오류 수정
 - [x] **API 에러 로그·URL 노출 `__DEV__` 제한** (2026-04-14, `63c92b5`) — `src/services/api.ts`에서 baseURL·스택 등 디버깅 정보 출력을 `__DEV__` 가드 안에서만 수행. 프로덕션 빌드에서는 사용자 친화 메시지만 노출. `.env.example` 갱신
 - [x] **백엔드 세션 ID 단일화와 호환 확인** (2026-04-14) — 백엔드에서 `SessionCreate`에 optional `id` 필드를 추가하고 `/upload`·`/generate`가 `user_sessions` 행을 upsert/동기화하도록 바뀜. 모바일은 `/upload` 응답의 `session_id`를 그대로 받아 쓰는 기존 흐름이 변경 없이 유지되고, `/user/sync` 스키마도 하위 호환이라 모바일 코드 변경 없음
+- [x] **세션 장기 누르기 삭제** (2026-04-14) — `HomeScreen` 카드 `onLongPress` 핸들러에서 `Alert.alert` 확인 모달 후 `deleteSession(storage)`로 로컬 SQLite에서 세션 제거. 모바일은 로컬 우선이라 서버 호출 없음. i18n 신규 키 `homeDeleteTitle`·`homeDeleteMessage`·`homeDelete` (ko/en)
 
 ### 미구현 (추후 예정)
 

@@ -9,6 +9,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import {
   getAllSessions, getAllSubjects, createSubject, getPendingReviewCount,
+  deleteSession as deleteSessionLocal,
   SessionRow, SubjectRow,
 } from '../services/storage';
 import { useLanguageStore } from '../store/languageStore';
@@ -66,6 +67,28 @@ export default function HomeScreen({ navigation }: Props) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleLongPressSession(session: SessionRow) {
+    Alert.alert(
+      s.homeDeleteTitle,
+      s.homeDeleteMessage,
+      [
+        { text: s.subjectCancel, style: 'cancel' },
+        {
+          text: s.homeDelete,
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSessionLocal(session.id);
+              await load();
+            } catch {
+              Alert.alert('Error', 'Failed to delete session.');
+            }
+          },
+        },
+      ],
+    );
   }
 
   function statusColor(status: SessionRow['status']): string {
@@ -206,6 +229,8 @@ export default function HomeScreen({ navigation }: Props) {
                   navigation.navigate('StudyNotes', { sessionId: item.id });
                 }
               }}
+              onLongPress={() => handleLongPressSession(item)}
+              delayLongPress={400}
               activeOpacity={0.7}
             >
               <Card style={styles.card}>
