@@ -5,9 +5,11 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-04-15)
+## 현재 상태 (2026-04-25)
 
 > **참고 (2026-04-15)** — 백엔드에서 "세션이 영구 pending에 갇히는 버그"를 종합 수정했습니다. 모바일은 백엔드 `/user/sessions`·`/result` 응답만 신뢰하면 되므로 별도 수정 없음. 상세는 `study-helper-backend/README.md` 및 `documents/problem/2026-04-15-session-stuck-pending.md` 참고.
+
+> **참고 (2026-04-25)** — 백엔드 `feat/question-quality-phase-a` 브랜치에서 문제 생성 품질 개선 진행 (OX 유형 추가, Few-shot exemplar 주입, 한글 validation 버그 수정). 응답에 `ox_questions: list[OXQuestion]` 필드가 새로 포함되지만 모바일은 명시적으로 사용하는 필드만 파싱하므로 **코드 변경 없이 호환**. OX 학습 화면을 노출하려면 별도 후속 작업 필요. 상세는 `documents/record_progress/2026-04-25-01-문제생성-품질-개선-Phase-A-1차.md` 참고.
 
 ### 완성된 화면 및 기능
 
