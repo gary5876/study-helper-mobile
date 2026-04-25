@@ -13,6 +13,7 @@ import {
   SessionRow, SubjectRow,
 } from '../services/storage';
 import { useLanguageStore } from '../store/languageStore';
+import { useAuthStore } from '../store/authStore';
 import { STRINGS } from '../i18n/strings';
 import SubjectTabBar, { UNCATEGORIZED_ID } from '../components/SubjectTabBar';
 
@@ -28,7 +29,15 @@ export default function HomeScreen({ navigation }: Props) {
   const [newSubjectName, setNewSubjectName] = useState('');
   const [saving, setSaving] = useState(false);
   const { lang, toggle } = useLanguageStore();
+  const signOut = useAuthStore((st) => st.signOut);
   const s = STRINGS[lang];
+
+  function handleLogout() {
+    Alert.alert('로그아웃', '정말 로그아웃 하시겠어요?', [
+      { text: '취소', style: 'cancel' },
+      { text: '로그아웃', style: 'destructive', onPress: () => signOut() },
+    ]);
+  }
 
   const load = useCallback(async () => {
     try {
@@ -185,6 +194,12 @@ export default function HomeScreen({ navigation }: Props) {
             iconColor="#fff"
             size={24}
             onPress={() => navigation.navigate('PlanSelection')}
+          />
+          <IconButton
+            icon="logout"
+            iconColor="#fff"
+            size={24}
+            onPress={handleLogout}
           />
         </View>
       </View>

@@ -15,6 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: process.env.APP_ENVIRONMENT === 'staging' ? 'study-helper (Staging)' : 'study-helper',
   slug: 'fundamentals',
+  scheme: 'studyhelper',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
@@ -56,6 +57,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     backendUrl: process.env.BACKEND_URL || '',
     environment: process.env.APP_ENVIRONMENT || 'development',
+    supabaseUrl: process.env.SUPABASE_URL || '',
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
     eas: {
       projectId: '165d5a36-a5e2-4d7b-aef9-4de9374d73aa',
     },

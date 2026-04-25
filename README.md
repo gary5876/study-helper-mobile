@@ -5,7 +5,9 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-04-14)
+## 현재 상태 (2026-04-15)
+
+> **참고 (2026-04-15)** — 백엔드에서 "세션이 영구 pending에 갇히는 버그"를 종합 수정했습니다. 모바일은 백엔드 `/user/sessions`·`/result` 응답만 신뢰하면 되므로 별도 수정 없음. 상세는 `study-helper-backend/README.md` 및 `documents/problem/2026-04-15-session-stuck-pending.md` 참고.
 
 ### 완성된 화면 및 기능
 
@@ -31,12 +33,24 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 - [x] **API 에러 로그·URL 노출 `__DEV__` 제한** (2026-04-14, `63c92b5`) — `src/services/api.ts`에서 baseURL·스택 등 디버깅 정보 출력을 `__DEV__` 가드 안에서만 수행. 프로덕션 빌드에서는 사용자 친화 메시지만 노출. `.env.example` 갱신
 - [x] **백엔드 세션 ID 단일화와 호환 확인** (2026-04-14) — 백엔드에서 `SessionCreate`에 optional `id` 필드를 추가하고 `/upload`·`/generate`가 `user_sessions` 행을 upsert/동기화하도록 바뀜. 모바일은 `/upload` 응답의 `session_id`를 그대로 받아 쓰는 기존 흐름이 변경 없이 유지되고, `/user/sync` 스키마도 하위 호환이라 모바일 코드 변경 없음
 - [x] **세션 장기 누르기 삭제** (2026-04-14) — `HomeScreen` 카드 `onLongPress` 핸들러에서 `Alert.alert` 확인 모달 후 `deleteSession(storage)`로 로컬 SQLite에서 세션 제거. 모바일은 로컬 우선이라 서버 호출 없음. i18n 신규 키 `homeDeleteTitle`·`homeDeleteMessage`·`homeDelete` (ko/en)
+- [x] **Supabase Auth 로그인/회원가입 도입** (2026-04-15) — 신규 의존성: `@supabase/supabase-js`, `expo-auth-session`, `expo-web-browser`, `expo-linking`, `react-native-url-polyfill`.
+  - `src/services/supabase.ts` — `expo-secure-store` 어댑터 기반 Supabase 클라이언트 (`autoRefreshToken`, `persistSession`, `detectSessionInUrl: false`)
+  - `src/store/authStore.ts` — zustand 스토어, 앱 시작 시 `getSession()` + `onAuthStateChange` 구독, `signOut()`
+  - `src/screens/LoginScreen.tsx` — 이메일/비밀번호 toggle + Google OAuth(`WebBrowser.openAuthSessionAsync` → 딥링크 `studyhelper://auth/callback` → `exchangeCodeForSession`). 회원가입 모드에서 약관 동의 체크박스 필수, 미체크 시 버튼 비활성화. `signUp.options.data.terms_accepted_at`에 ISO 타임스탬프 기록
+  - `src/navigation/AppNavigator.tsx` — 세션 가드: `session == null`이면 Login 스택, 있으면 기존 `PlanSelection`/`Home` 스택. `Linking.addEventListener`로 OAuth 콜백 URL 수신 후 세션 교환
+  - `src/services/api.ts` — axios 요청 인터셉터에서 `supabase.auth.getSession()`으로 access token 조회 → `Authorization: Bearer` 자동 주입. 호출부 변경 없음
+  - `src/services/migration.ts` — 최초 로그인 시 로컬 SQLite 과목·세션을 기존 `/user/sync`로 1회 업로드, SecureStore `cloud_sync_completed_at` 플래그로 중복 실행 방지. 실패해도 앱 진입 비차단(로그만)
+  - `src/screens/HomeScreen.tsx` — 헤더 우측에 로그아웃 `IconButton` 추가, 확인 Alert 후 `signOut()`
+  - `app.config.ts` — `scheme: 'studyhelper'` 추가, `extra.supabaseUrl` / `extra.supabaseAnonKey` 노출. `src/config/env.ts`에 `SUPABASE_URL`/`SUPABASE_ANON_KEY` 추가
+  - 운영 작업: Supabase 대시보드에서 Redirect URL에 `studyhelper://auth/callback` 추가 필요. 모바일 `.env`/EAS secret에 `SUPABASE_URL`, `SUPABASE_ANON_KEY` 설정 필요
+- [x] **백엔드 결과 영속화 리팩터와의 호환 확인** (2026-04-15) — 백엔드에서 `user_sessions`에 `result_json/error_message/completed_at` 컬럼 추가(migration 004), 생성 결과를 소유자 테이블에 primary로 저장하도록 리팩터됨. 모바일은 `/result/{id}`를 호출하지 않고 로컬 SQLite의 `study_content`만 사용하므로 **코드 변경 없음**. `/user/sessions` 응답에 새 컬럼이 포함될 수 있으나 모바일은 명시적으로 필요한 필드만 쓰므로 호환. 상세: `../documents/record_progress/2026-04-15-03-result-영속화-리팩터.md`
 
 ### 미구현 (추후 예정)
 
 - [ ] 푸시 알림 (복습 예정일 알림, expo-notifications 설치됨)
 - [ ] 앱스토어 / 플레이스토어 배포
-- [ ] 사용자 계정 / 클라우드 동기화
+- [ ] 비밀번호 찾기/재설정 화면
+- [ ] 복습 일정(`review_schedule`)의 로그인 후 sync 확장 (현재 subjects/sessions만 최초 업로드)
 
 ---
 

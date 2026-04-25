@@ -7,6 +7,7 @@ import axios, { AxiosError } from 'axios';
 import axiosRetry from 'axios-retry';
 import * as SecureStore from 'expo-secure-store';
 import { ENV } from '../config/env';
+import { supabase } from './supabase';
 
 export const API_KEY_STORAGE_KEY = 'anthropic_api_key';
 export const BASE_URL_STORAGE_KEY = 'backend_base_url';
@@ -173,6 +174,17 @@ async function createClient() {
     },
   });
 
+  // Inject Supabase access token (if signed in) on every request
+  client.interceptors.request.use(async (cfg) => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (token) {
+      cfg.headers = cfg.headers ?? {};
+      (cfg.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+    }
+    return cfg;
+  });
+
   // Error normaliser interceptor
   client.interceptors.response.use(
     (res) => res,
@@ -248,6 +260,33 @@ export async function fetchResult(sessionId: string): Promise<StudyContent> {
 export async function deleteSession(sessionId: string): Promise<void> {
   const client = await createClient();
   await client.delete(`/session/${sessionId}`);
+}
+
+// ─────────────────────────────────────────
+// User data sync (로컬 → 클라우드 최초 업로드)
+// ─────────────────────────────────────────
+
+export interface SyncPayload {
+  subjects: { name: string; color: string }[];
+  sessions: {
+    id: string;
+    pdf_name: string;
+    subject_id?: string | null;
+    page_count: number;
+    word_count: number;
+    status: string;
+  }[];
+  review_schedule: {
+    session_id: string;
+    question_id: string;
+    question_type: 'mcq' | 'fill';
+    interval_days: number;
+  }[];
+}
+
+export async function syncUserData(payload: SyncPayload): Promise<void> {
+  const client = await createClient();
+  await client.post('/user/sync', payload);
 }
 
 // ─────────────────────────────────────────

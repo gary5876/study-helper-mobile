@@ -13,6 +13,8 @@ import Constants from 'expo-constants';
 interface AppConfig {
   BACKEND_URL: string;
   ENVIRONMENT: 'development' | 'staging' | 'production';
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
 }
 
 function getConfig(): AppConfig {
@@ -27,6 +29,9 @@ function getConfig(): AppConfig {
     ENVIRONMENT: (__DEV__
       ? 'development'
       : extra.environment || 'production') as AppConfig['ENVIRONMENT'],
+
+    SUPABASE_URL: extra.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+    SUPABASE_ANON_KEY: extra.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
   };
 }
 

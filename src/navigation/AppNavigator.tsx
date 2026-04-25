@@ -2,11 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
+import * as Linking from 'expo-linking';
 import { hasPlanSelected, getPlan, hasApiKey } from '../services/api';
 import { useLanguageStore } from '../store/languageStore';
+import { useAuthStore } from '../store/authStore';
+import { supabase } from '../services/supabase';
+import { runFirstLoginSync } from '../services/migration';
 import { STRINGS } from '../i18n/strings';
 
 // Screens
+import LoginScreen from '../screens/LoginScreen';
 import PlanSelectionScreen from '../screens/PlanSelectionScreen';
 import HomeScreen from '../screens/HomeScreen';
 import UploadScreen from '../screens/UploadScreen';
@@ -21,6 +26,7 @@ import PrivacyScreen from '../screens/PrivacyScreen';
 import type { StudyMode } from '../services/api';
 
 export type RootStackParamList = {
+  Login: undefined;
   PlanSelection: undefined;
   Home: undefined;
   Upload: undefined;
@@ -40,8 +46,34 @@ export default function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState<'PlanSelection' | 'Home' | null>(null);
   const { lang } = useLanguageStore();
   const s = STRINGS[lang];
+  const { session, initializing, init } = useAuthStore();
 
   useEffect(() => {
+    init();
+  }, [init]);
+
+  // Handle OAuth deep-link callbacks (studyhelper://auth/callback?code=...)
+  useEffect(() => {
+    const handleUrl = async (url: string) => {
+      const parsed = Linking.parse(url);
+      const code = (parsed.queryParams?.code as string | undefined) ?? undefined;
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+      }
+    };
+    Linking.getInitialURL().then((url: string | null) => { if (url) handleUrl(url); });
+    const sub = Linking.addEventListener('url', ({ url }: { url: string }) => handleUrl(url));
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!session) {
+      setInitialRoute(null);
+      return;
+    }
+    runFirstLoginSync().catch((e) => {
+      if (__DEV__) console.warn('[sync] first login sync failed:', e);
+    });
     (async () => {
       const planSelected = await hasPlanSelected();
       if (!planSelected) {
@@ -56,9 +88,9 @@ export default function AppNavigator() {
       }
       setInitialRoute('Home');
     })();
-  }, []);
+  }, [session]);
 
-  if (initialRoute === null) {
+  if (initializing || (session && initialRoute === null)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
@@ -66,10 +98,20 @@ export default function AppNavigator() {
     );
   }
 
+  if (!session) {
+    return (
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={initialRoute}
+        initialRouteName={initialRoute ?? 'Home'}
         screenOptions={{
           headerStyle: { backgroundColor: '#6c63ff' },
           headerTintColor: '#fff',
