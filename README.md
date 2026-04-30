@@ -5,7 +5,13 @@ SM-2 간격 반복 알고리즘으로 장기 기억을 강화합니다.
 
 ---
 
-## 현재 상태 (2026-04-25)
+## 현재 상태 (2026-04-30)
+
+> **2026-04-30** — `chore/coderabbit-config` 브랜치에서 CodeRabbit 자동 코드
+> 리뷰 설정 도입. `.coderabbit.yaml` (한국어 리뷰, `src/screens`·`src/services`·
+> `src/store`·`src/components`·`__tests__` 별 path 지침). 핵심 가드: SecureStore
+> 강제(AsyncStorage 금지), `__DEV__` 로깅 가드, i18n `t()` 강제, FlatList
+> 사용. 상세: `../documents/record_progress/2026-04-30-01-coderabbit-도입.md`.
 
 > **참고 (2026-04-15)** — 백엔드에서 "세션이 영구 pending에 갇히는 버그"를 종합 수정했습니다. 모바일은 백엔드 `/user/sessions`·`/result` 응답만 신뢰하면 되므로 별도 수정 없음. 상세는 `study-helper-backend/README.md` 및 `documents/problem/2026-04-15-session-stuck-pending.md` 참고.
 
