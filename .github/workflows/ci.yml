@@ -32,6 +32,9 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
 
+      - name: Expo doctor (config / dependency 헬스체크)
+        run: npx expo-doctor
+
       - name: Run tests with coverage
         run: npm run test:coverage
 
