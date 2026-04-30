@@ -1,0 +1,83 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: "ko-KR"
+tone_instructions: "한국어로, 단정적이지만 정중하게 리뷰. RN/Expo 특유의 플랫폼 분기, 네트워크 에러 처리, AsyncStorage·SecureStore 사용 안전성, i18n 누락에 우선순위를 둔다."
+early_access: false
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+      - "develop"
+    ignore_title_keywords:
+      - "WIP"
+      - "DO NOT REVIEW"
+
+  path_filters:
+    - "!**/*.lock"
+    - "!**/package-lock.json"
+    - "!**/yarn.lock"
+    - "!**/node_modules/**"
+    - "!**/.expo/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/ios/Pods/**"
+    - "!**/android/build/**"
+    - "!**/android/app/build/**"
+    - "!**/assets/**"
+
+  path_instructions:
+    - path: "src/screens/**/*.{ts,tsx}"
+      instructions: |
+        화면 컴포넌트. 다음을 중점 검토:
+        - 네트워크 에러 UI: loading/error/empty state 분기
+        - i18n: 하드코딩 한국어/영어 대신 t() 사용 여부
+        - 접근성: testID, accessibilityLabel, 색상 대비
+        - 메모리: 큰 리스트는 FlatList + keyExtractor, 이미지 캐싱
+        - 네비게이션: deep link, 백버튼 (Android)
+    - path: "src/services/**/*.{ts,tsx}"
+      instructions: |
+        API/스토리지 클라이언트. 다음을 중점 검토:
+        - 인증 토큰: SecureStore에 저장 (AsyncStorage 금지)
+        - 에러 처리: 네트워크 실패/타임아웃/401 분기, 재시도 정책
+        - 타입 안정성: any 사용 지양, 응답 파싱 시 zod/manual guard
+        - 로깅: console.log 노출 금지 (DEV 분기)
+    - path: "src/store/**/*.{ts,tsx}"
+      instructions: |
+        상태 관리. 영속화 대상 식별, 마이그레이션 처리, 직렬화 가능 여부,
+        선택자(selector) 메모이제이션을 검토.
+    - path: "src/components/**/*.{ts,tsx}"
+      instructions: |
+        재사용 컴포넌트. props 타입 명시, 불필요한 리렌더 (memo/콜백),
+        디자인 토큰 일관성을 검토.
+    - path: "src/__tests__/**/*.{ts,tsx}"
+      instructions: |
+        Jest 테스트. 실제 동작 검증인지 확인하고, RN 모킹 (NativeModules,
+        AsyncStorage)이 적절한지 점검.
+
+  tools:
+    eslint:
+      enabled: true
+    biome:
+      enabled: false
+    markdownlint:
+      enabled: true
+    languagetool:
+      enabled: false
+    ast-grep:
+      essential_rules: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
