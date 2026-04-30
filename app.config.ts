@@ -17,6 +17,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'fundamentals',
   scheme: 'studyhelper',
   version: '1.0.0',
+  runtimeVersion: { policy: 'appVersion' },
+  updates: {
+    url: 'https://u.expo.dev/165d5a36-a5e2-4d7b-aef9-4de9374d73aa',
+  },
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',

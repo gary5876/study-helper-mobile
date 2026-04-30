@@ -440,26 +440,41 @@ eas build --platform ios --profile production
 
 ### 빌드 프로파일 (`eas.json`)
 
-| 프로파일 | 용도 | 배포 방식 |
-|----------|------|-----------|
-| `development` | 로컬 개발, 시뮬레이터 | 내부 배포 |
-| `preview` | QA 테스트 | 내부 배포 (APK) |
-| `production` | 스토어 배포 | App Bundle |
+| 프로파일 | 용도 | 배포 방식 | EAS Update 채널 | APP_ENVIRONMENT |
+|----------|------|-----------|------------------|------------------|
+| `development` | 로컬 개발, 시뮬레이터 | 내부 배포 | `development` | dev (default) |
+| `preview` | QA 테스트 (develop 브랜치 OTA 대상) | 내부 배포 (APK) | `preview` | `staging` (별도 bundle ID) |
+| `production` | 스토어 배포 | App Bundle | `production` | `production` |
+
+`runtimeVersion` 정책은 `appVersion` (네이티브 호환성 키 = `version` 필드). `app.config.ts`에 `updates.url` (`https://u.expo.dev/<projectId>`) 설정됨.
 
 ---
 
 ## CI/CD
 
-`main` 브랜치에 push 시 자동 실행 (`.github/workflows/ci.yml`):
+`.github/workflows/ci.yml` (모바일 레포) — `main` / `develop` push 및 PR 시 실행:
 
 ```
-1. Test    → lint + 타입체크 + Jest + codecov
-2. Build   → EAS Android 빌드 (preview)
-3. Build   → EAS iOS 빌드 (preview, macOS runner)
+공통 (모든 push/PR):
+  test  → lint + tsc --noEmit + Jest coverage + Codecov 업로드
+
+develop push 시:
+  eas-update  → eas update --branch preview --non-interactive
+                (OTA, 30초~2분 — 네이티브 빌드 없음)
+
+main push 시:
+  eas-build   → eas build --profile production --platform all --non-interactive --no-wait
+                (네이티브 빌드 15~30분, 백그라운드 트리거)
 ```
+
+| 브랜치 | 트리거 | 결과 |
+|--------|--------|------|
+| `develop` push | EAS Update → `preview` 채널 | 이미 설치된 preview 빌드 사용자에게 OTA 반영 |
+| `main` push | EAS Build → `production` 프로파일 | 새 네이티브 바이너리 (스토어 업로드용) |
+| PR | test job만 | 머지 전 검증 |
 
 필요한 GitHub Secrets:
 
 | Secret | 설명 |
 |--------|------|
-| `EXPO_TOKEN` | Expo 계정 토큰 |
+| `EXPO_TOKEN` | Expo 계정 토큰 (`expo.dev` → Account Settings → Access Tokens) |
