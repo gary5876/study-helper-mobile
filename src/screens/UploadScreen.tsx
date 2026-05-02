@@ -105,8 +105,8 @@ export default function UploadScreen({ navigation }: Props) {
 
   async function doUpload(subjectId: string | null) {
     const plan = (await getPlan()) ?? 'paid';
-    const apiKey = plan !== 'free' ? (await getApiKey() ?? '') : '';
-    if (plan !== 'free' && !apiKey) {
+    const apiKey = (await getApiKey()) ?? '';
+    if (!apiKey) {
       Alert.alert(s.uploadNoApiKey, s.uploadNoApiKeyDesc);
       return;
     }

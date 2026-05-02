@@ -37,14 +37,12 @@ export const PLAN_MODELS: Record<Plan, string[]> = {
     // Qwen
     'qwen-qwq-32b',
   ],
-  free: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
 };
 
 export const DEFAULT_MODELS: Record<Plan, string> = {
   paid:   'claude-sonnet-4-6',
   gpt:    'gpt-4o-mini',
   timely: 'auto',
-  free:   'gemini-2.0-flash',
 };
 
 interface ModelStore {
