@@ -103,7 +103,8 @@ export default function WrongAnswerScreen({ route, navigation }: Props) {
     setSaving(false);
 
     if (retryIds.length > 0) {
-      navigation.replace('MCQ', { sessionId, retryIds });
+      // retryIds 가 mode 필터보다 우선하므로 mode 는 placeholder
+      navigation.replace('MCQ', { sessionId, mode: 'exam', retryIds });
     } else {
       navigation.navigate('Home');
     }

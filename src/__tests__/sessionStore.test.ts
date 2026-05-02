@@ -15,7 +15,7 @@ function makeContent(sessionId: string): StudyContent {
         id: 'q1', question: 'What is AI?',
         options: { A: 'Artificial Intelligence', B: 'Auto Index', C: 'Algorithm', D: 'None' },
         correct_answer: 'A', explanation: 'AI stands for Artificial Intelligence.',
-        concept_id: 'c1', difficulty: 'easy',
+        concept_id: 'c1', level: 1, question_type: 'concept',
       },
     ],
     fill_questions: [],

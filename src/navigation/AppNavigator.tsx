@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
 import * as Linking from 'expo-linking';
-import { hasPlanSelected, getPlan, hasApiKey } from '../services/api';
+import { hasPlanSelected, hasApiKey } from '../services/api';
 import { useLanguageStore } from '../store/languageStore';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../services/supabase';
@@ -80,9 +80,8 @@ export default function AppNavigator() {
         setInitialRoute('PlanSelection');
         return;
       }
-      const plan = await getPlan();
-      // 유료 플랜인데 API 키가 없으면 다시 설정 화면으로
-      if (plan !== 'free' && !(await hasApiKey())) {
+      // 모든 플랜이 API 키를 요구 — 키가 없으면 설정 화면으로
+      if (!(await hasApiKey())) {
         setInitialRoute('PlanSelection');
         return;
       }
