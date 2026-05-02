@@ -32,6 +32,9 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
 
+      - name: Expo doctor (config / dependency 헬스체크)
+        run: npx expo-doctor
+
       - name: Run tests with coverage
         run: npm run test:coverage
 
@@ -40,7 +43,62 @@ jobs:
         with:
           fail_ci_if_error: false
 
-  # EAS Update / Build는 CI에서 제외 — 로컬에서 수동 실행
-  # eas update --branch main --non-interactive
-  # eas build --platform android --profile preview --non-interactive
-  # eas build --platform ios --profile preview --non-interactive
+  # ──────────────────────────────────────
+  # 2. EAS Update — develop push 시 OTA 배포 (preview 채널)
+  # ──────────────────────────────────────
+  eas-update:
+    name: EAS Update (preview)
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Set up EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish update to preview channel
+        run: eas update --branch preview --message "${{ github.event.head_commit.message }}" --non-interactive
+
+  # ──────────────────────────────────────
+  # 3. EAS Build — main push 시 production 빌드 (네이티브)
+  # ──────────────────────────────────────
+  eas-build:
+    name: EAS Build (production)
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Set up EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Trigger production build (Android + iOS)
+        run: eas build --profile production --platform all --non-interactive --no-wait
